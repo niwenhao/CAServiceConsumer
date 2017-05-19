@@ -1,0 +1,11 @@
+build.commands=org.eclipse.jdt.core.javabuilder,org.eclipse.wst.common.project.facet.core.builder,org.eclipse.wst.validation.validationbuilder
+connection.arguments=
+connection.gradle.distribution=GRADLE_DISTRIBUTION(LOCAL_INSTALLATION(/home/nwh/.sdkman/candidates/gradle/current))
+connection.java.home=/opt/jdk1.8.0_131
+connection.jvm.arguments=-Dhttp.proxyHost\=partnerproxy.nri.co.jp -Dhttp.proxyPort\=88 -Dhttp.proxyUser\=jis00646 -Dhttp.proxyPassword\=nwh1702 -Dhttps.proxyHost\=partnerproxy.nri.co.jp -Dhttps.proxyPort\=88 -Dhttps.proxyUser\=jis00646 -Dhttps.proxyPassword\=nwh1702 -Djavax.net.ssl.trustStore\=/opt/java/jre/lib/security/cacerts -Djavax.net.ssl.trustStorePassword\=changeit
+connection.project.dir=
+containers=org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8/,org.eclipse.jst.j2ee.internal.web.container
+derived.resources=.gradle,build
+eclipse.preferences.version=1
+natures=org.eclipse.jdt.core.javanature,org.eclipse.wst.common.project.facet.core.nature,org.eclipse.wst.common.modulecore.ModuleCoreNature
+project.path=\:
