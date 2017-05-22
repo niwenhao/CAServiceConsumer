@@ -1,0 +1,28 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+<h:head>
+	<title>サービスメンテ</title>
+</h:head>
+<h:body>
+	<h1 class="title">サービスをメンテナンス</h1>
+	<h:form>
+		<table>
+			<c:forEach items="#{serviceManBean.listServices()}" var="service">
+				<tr>
+					<td>#{service.url}</td>
+					<td>#{service.scope}</td>
+					<td><h:commandButton
+							action="#{serviceManBean.update(service.id)}" value="更新" /> <h:commandButton
+							action="#{serviceManBean.delete(service.id)}" value="削除" /></td>
+				</tr>
+			</c:forEach>
+		</table>
+		<h:commandButton action="#{serviceManBean.append()}" value="追加" />
+		<h:commandButton action="client_man" value="戻る" />
+	</h:form>
+</h:body>
+</html>

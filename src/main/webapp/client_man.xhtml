@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
+<h:head>
+	<title>クライアントメンテ</title>
+</h:head>
+<h:body>
+	<h1 class="title">クライアントをメンテナンス</h1>
+	<h:form>
+		<table>
+			<c:forEach items="#{clientManBean.listClients()}" var="client">
+				<tr>
+					<td>${client.ident}</td>
+					<td>${client.secret}</td>
+					<td>${client.scope}</td>
+					<td>${client.authorizeUrl}</td>
+					<td>${client.tokenUrl}</td>
+					<td><h:commandButton
+							action="#{clientManBean.apiMan(client.id)}" value="API" /> <h:commandButton
+							action="#{clientManBean.update(client.id)}" value="更新" /> <h:commandButton
+							action="#{clientManBean.delete(client.id)}" value="削除" /></td>
+				</tr>
+			</c:forEach>
+		</table>
+		<h:commandButton action="#{clientManBean.append()}" value="追加" />
+		<h:commandButton action="index" value="戻る" />
+	</h:form>
+</h:body>
+</html>
