@@ -178,6 +178,10 @@ public abstract class ServiceInvoker {
 
 	}
 
+	private void refreshToken() {
+
+	}
+
 	public JsonStructure invokeService(String name, JsonStructure inDto) {
 		TOKEN_STATUS ts = checkToken();
 		if (TOKEN_STATUS.GRANTED == ts) {

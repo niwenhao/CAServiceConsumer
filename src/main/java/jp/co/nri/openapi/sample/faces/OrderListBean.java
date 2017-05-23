@@ -16,32 +16,4 @@ import jp.co.nri.openapi.sample.persistence.User;
 @ManagedBean
 public class OrderListBean {
 
-
-	public List<User> listUsers() {
-		return em.createNamedQuery(User.Q_LIST_ALL_USERS, User.class).getResultList();
-	}
-	
-	public String update(long id) throws Exception {
-		FacesContext.getCurrentInstance().getExternalContext().getSessionMap().put(ConstDef.SK_USER_ID, id);
-		return "user_man_edit";
-	}
-
-	public String delete(long id) throws Exception {
-		ut.begin();
-
-		User u = em.find(User.class, id);
-		em.remove(u);
-		ut.commit();
-
-		return null;
-	}
-	
-	public String append() throws Exception {
-		Map<String, Object> map = FacesContext.getCurrentInstance().getExternalContext().getSessionMap();
-		if (map.containsKey(ConstDef.SK_USER_ID))
-			map.remove(ConstDef.SK_USER_ID);
-		return "user_man_edit";
-
-	}
-
 }
