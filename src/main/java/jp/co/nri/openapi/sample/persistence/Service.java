@@ -5,14 +5,23 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 
 @Entity
-@NamedQuery(name = "findAllServiceOfAClientWithID", query = "select s from Service s where s.client.id = :client_id")
+@NamedQueries({
+	@NamedQuery(
+			name = Service.Q_FIND_ALL_SERVICE_OF_A_CLIENT_WITH_ID, 
+			query = "select s from Service s where s.client.id = :client_id")
+})
 public class Service {
+	public static final String Q_FIND_ALL_SERVICE_OF_A_CLIENT_WITH_ID = "92223f85-4481-4550-93d3-2d25a3d36418";
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private long id;
+	
+	private String name;
 
 	private String url;
 
@@ -51,5 +60,13 @@ public class Service {
 
 	public void setClient(Client client) {
 		this.client = client;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 }

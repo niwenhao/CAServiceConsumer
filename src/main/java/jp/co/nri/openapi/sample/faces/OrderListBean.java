@@ -14,13 +14,8 @@ import jp.co.nri.openapi.sample.common.ConstDef;
 import jp.co.nri.openapi.sample.persistence.User;
 
 @ManagedBean
-public class UserManBean {
+public class OrderListBean {
 
-	@Resource
-    UserTransaction ut;
-
-	@PersistenceContext
-	EntityManager em;
 
 	public List<User> listUsers() {
 		return em.createNamedQuery(User.Q_LIST_ALL_USERS, User.class).getResultList();

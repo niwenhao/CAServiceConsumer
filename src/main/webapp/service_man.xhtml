@@ -13,6 +13,7 @@
 		<table>
 			<c:forEach items="#{serviceManBean.listServices()}" var="service">
 				<tr>
+					<td>#{service.name}</td>
 					<td>#{service.url}</td>
 					<td>#{service.scope}</td>
 					<td><h:commandButton

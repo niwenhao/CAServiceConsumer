@@ -10,24 +10,17 @@
 	<h1 class="title">ユーザをメンテナンス</h1>
 	<h:form>
 		<table>
-			<c:forEach items="#{userManBean.listUsers()}" var="user">
+			<c:forEach items="${userManBean.listUsers()}" var="user">
 				<tr>
 					<td>${user.name}</td>
-					<td><h:inputSecret value="#{userManBean.updatePassword1}"></h:inputSecret></td>
-					<td><h:inputSecret value="#{userManBean.updatePassword2}"></h:inputSecret></td>
+					<td>********</td>
 					<td><h:commandButton action="#{userManBean.update(user.id)}"
 							value="更新" /> <h:commandButton
 							action="#{userManBean.delete(user.id)}" value="削除" /></td>
 				</tr>
 			</c:forEach>
-			<tr>
-				<td><h:inputText value="#{userManBean.appendUser}"></h:inputText></td>
-				<td><h:inputSecret value="#{userManBean.appendPassword1}"></h:inputSecret></td>
-				<td><h:inputSecret value="#{userManBean.appendPassword2}"></h:inputSecret></td>
-				<td><h:commandButton action="#{userManBean.append()}"
-						value="追加" /></td>
-			</tr>
 		</table>
+		<h:commandButton action="#{userManBean.append()}" value="追加" />
 		<h:commandButton action="index" value="戻る" />
 	</h:form>
 </h:body>
