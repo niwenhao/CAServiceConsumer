@@ -64,5 +64,13 @@ public class Token {
 	public void setUser(User user) {
 		this.user = user;
 	}
+
+	public Client getClient() {
+		return client;
+	}
+
+	public void setClient(Client client) {
+		this.client = client;
+	}
 }
 

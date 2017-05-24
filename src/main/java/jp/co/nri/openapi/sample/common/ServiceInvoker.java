@@ -29,8 +29,10 @@ import jp.co.nri.openapi.sample.persistence.User;
 
 public abstract class ServiceInvoker implements JsonHelper {
 	
-	public static final String RETURN_URL = "RETURN_URL";
-	public static final String FOLLOW_PARAMETERS = "FOLLOW_PARAMETERS";
+	public static final String RETURN_URL = "returnUrl";
+	public static final String FOLLOW_PARAMETERS = "followParameters";
+	public static final String CLIENT_ID = "clientId";
+	public static final String USER_ID = "userId";
 	
 	private User user;
 	private Token token;
@@ -164,6 +166,8 @@ public abstract class ServiceInvoker implements JsonHelper {
 		
 		state.put(RETURN_URL, this.getReturnURL());
 		state.put(FOLLOW_PARAMETERS, this.getAppParameters());
+		state.put(CLIENT_ID, this.client.getId());
+		state.put(USER_ID, user.getId());
 		re.state = state;
 		
 		throw re;
@@ -191,9 +195,9 @@ public abstract class ServiceInvoker implements JsonHelper {
 			throw new RuntimeException(e);
 		}
 
-		if (!response.getStatusLine().equals("200")) {
+		if (response.getStatusLine().getStatusCode() != 200) {
 			throw new RuntimeException(
-					"Status is " + response.getStatusLine() + "\\n" + response.getEntity().toString());
+					"Status is " + response.getStatusLine().getStatusCode() + "\\n" + response.getEntity().toString());
 		}
 
 		if (response.getEntity().getContentType().getValue().replaceAll("^.*application/json.*$", "").length() == 0) {
