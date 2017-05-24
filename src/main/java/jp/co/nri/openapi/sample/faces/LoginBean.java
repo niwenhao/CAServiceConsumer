@@ -24,7 +24,7 @@ public class LoginBean {
 	private String errorMessage;
 
 	public String login() {
-		List<User> rst = em.createNamedQuery(User.Q_LOGIN_WITH_USERNAME_AND_PASSWORD, User.class)
+		List<User> rst = em.createNamedQuery(User.FIND_BY_USERNAME_AND_PASSWORD, User.class)
 				.setParameter("username", this.getUsername()).setParameter("password", this.getPassword())
 				.getResultList();
 		if (rst.size() == 1) {

@@ -4,7 +4,14 @@ import java.util.Date;
 import javax.persistence.*;
 
 @Entity
+@NamedQueries({
+	@NamedQuery(
+			name = Token.FIND_ALL_BY_USERID_AND_SERVICE_NAME,
+			query = "select t from token t where t.user.id = :user_id and t.client.service.name = :name")
+})
 public class Token {
+	
+	public static final String FIND_ALL_BY_USERID_AND_SERVICE_NAME = "90bbdc87-21f4-44c4-82a0-6936b30b77bc";
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private long id;

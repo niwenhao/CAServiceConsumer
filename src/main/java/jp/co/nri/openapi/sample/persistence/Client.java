@@ -19,6 +19,8 @@ public class Client {
 	
 	private String tokenUrl;
 	
+	private String requestUrl;
+	
 	@OneToMany(cascade=CascadeType.ALL, mappedBy="client")
 	private Set<Service> services;
 
@@ -76,6 +78,14 @@ public class Client {
 
 	public void setServices(Set<Service> services) {
 		this.services = services;
+	}
+
+	public String getRequestUrl() {
+		return requestUrl;
+	}
+
+	public void setRequestUrl(String requestUrl) {
+		this.requestUrl = requestUrl;
 	}
 	
 }

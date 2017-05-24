@@ -11,11 +11,16 @@ import javax.persistence.NamedQuery;
 @Entity
 @NamedQueries({
 	@NamedQuery(
-			name = Service.Q_FIND_ALL_SERVICE_OF_A_CLIENT_WITH_ID, 
-			query = "select s from Service s where s.client.id = :client_id")
+			name = Service.FIND_BY_CLIENT_ID, 
+			query = "select s from Service s where s.client.id = :client_id"),
+	@NamedQuery(
+			name = Service.FIND_BY_NAME,
+			query = "select s from Service s where s.name = :name"
+			)
 })
 public class Service {
-	public static final String Q_FIND_ALL_SERVICE_OF_A_CLIENT_WITH_ID = "92223f85-4481-4550-93d3-2d25a3d36418";
+	public static final String FIND_BY_CLIENT_ID = "92223f85-4481-4550-93d3-2d25a3d36418";
+	public static final String FIND_BY_NAME = "c21c2a1c-46a9-44d2-9079-b0a3006d7049";
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)

@@ -13,16 +13,16 @@ import javax.persistence.OneToMany;
 
 @NamedQueries({ 
 	@NamedQuery(
-			name = User.Q_LIST_ALL_USERS, 
+			name = User.LIST_ALL_USERS, 
 			query = "select u from User u"),
 	@NamedQuery(
-			name = User.Q_LOGIN_WITH_USERNAME_AND_PASSWORD,
+			name = User.FIND_BY_USERNAME_AND_PASSWORD,
 			query = "select u from User u where u.name = :username and u.password = :password")
 	})
 @Entity
 public class User {
-	public static final String Q_LIST_ALL_USERS = "d2a43b45-5097-4151-8d64-cff09a143b17";
-	public static final String Q_LOGIN_WITH_USERNAME_AND_PASSWORD = "7a6b6be3-d9dc-495d-abb4-b22672b787ec";
+	public static final String LIST_ALL_USERS = "d2a43b45-5097-4151-8d64-cff09a143b17";
+	public static final String FIND_BY_USERNAME_AND_PASSWORD = "7a6b6be3-d9dc-495d-abb4-b22672b787ec";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)

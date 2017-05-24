@@ -23,7 +23,7 @@ public class UserManBean {
 	EntityManager em;
 
 	public List<User> listUsers() {
-		return em.createNamedQuery(User.Q_LIST_ALL_USERS, User.class).getResultList();
+		return em.createNamedQuery(User.LIST_ALL_USERS, User.class).getResultList();
 	}
 	
 	public String update(long id) throws Exception {
