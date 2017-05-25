@@ -23,6 +23,7 @@ public class ClientManBean {
 	EntityManager em;
 
 	public List<Client> listClients() {
+		System.out.println("listClients");
 		CriteriaQuery<Client> query = em.getCriteriaBuilder().createQuery(Client.class);
 		Root<Client> root = query.from(Client.class);
 		return em.createQuery(query.select(root)).getResultList();

@@ -7,7 +7,9 @@ import javax.persistence.*;
 @NamedQueries({
 	@NamedQuery(
 			name = Token.FIND_ALL_BY_USERID_AND_SERVICE_NAME,
-			query = "select t from token t where t.user.id = :user_id and t.client.service.name = :name")
+			query = "select t from "
+					+ "Token t join t.client c join c.services s "
+					+ "where t.user.id = :user_id and s.name = :name")
 })
 public class Token {
 	

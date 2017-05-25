@@ -28,6 +28,9 @@
 		<label>トークンURL：<h:inputText
 				value="#{clientManEditBean.data.tokenUrl}" /></label>
 		<br />
+		<label>リクエストURL：<h:inputText
+				value="#{clientManEditBean.data.requestUrl}" /></label>
+		<br />
 		<br />
 		<c:if test="${empty sessionScope.SK_CLIENT_ID}">
 			<h:commandButton action="#{clientManEditBean.append()}" value="追加" />

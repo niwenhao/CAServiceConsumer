@@ -25,7 +25,7 @@ public class ServiceManBean {
 	public List<Service> listServices() throws Exception {
 		
 		long id = (Long)FacesContext.getCurrentInstance().getExternalContext().getSessionMap().get(ConstDef.SK_CLIENT_ID);
-		return em.createNamedQuery("findAllServiceOfAClientWithID", Service.class).setParameter("client_id", id).getResultList();
+		return em.createNamedQuery(Service.FIND_BY_CLIENT_ID, Service.class).setParameter("client_id", id).getResultList();
 	}
 	
 	public String update(long id) throws Exception {

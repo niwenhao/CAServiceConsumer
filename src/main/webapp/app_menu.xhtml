@@ -9,11 +9,7 @@
 <h:body>
 	<h1 class="title">機能一覧</h1>
 	<h:form>
-	<c:set var="orderList" value="#{orderListBean.listOrders()}"/>
-
-	<c:forEach var="order" items="${orderList}">
-	</c:forEach>
-
+		<h:commandLink action="order_list">注文一覧</h:commandLink>
 	</h:form>
 </h:body>
 </html>

@@ -89,9 +89,9 @@ public class AuthorizeCodeBean implements JsonHelper {
 			Map<String, Object> rst = json2Map(response.getEntity().getContent());
 
 			Token token = new Token();
-			token.setAccessToken((String) rst.get("access_toke"));
+			token.setAccessToken((String) rst.get("access_token"));
 			token.setRefreshToken((String) rst.get("refresh_token"));
-			token.setTimeLimit(new Date(System.currentTimeMillis() + ((BigDecimal) rst.get("expires_in")).longValue()));
+			token.setTimeLimit(new Date(System.currentTimeMillis() + ((BigDecimal) rst.get("expires_in")).longValue()*1000));
 
 			token.setUser(user);
 			token.setClient(client);

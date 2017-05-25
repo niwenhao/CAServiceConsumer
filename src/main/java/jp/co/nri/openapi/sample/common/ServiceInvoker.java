@@ -1,5 +1,8 @@
 package jp.co.nri.openapi.sample.common;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -8,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Resource;
-import javax.json.Json;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.transaction.UserTransaction;
@@ -60,7 +62,7 @@ public abstract class ServiceInvoker implements JsonHelper {
 				StringBuilder sb = new StringBuilder(authorizeUrl);
 				sb.append("?response_type=code");
 				sb.append("&client_id=").append(URLEncoder.encode(clientId, StandardCharsets.UTF_8.name()));
-				sb.append("&request_uri=").append(URLEncoder.encode(clientId, StandardCharsets.UTF_8.name()));
+				sb.append("&request_uri=").append(URLEncoder.encode(requestUri, StandardCharsets.UTF_8.name()));
 				sb.append("&scope=").append(URLEncoder.encode(scope, StandardCharsets.UTF_8.name()));
 				sb.append("&nonce=").append(URLEncoder.encode(nonce, StandardCharsets.UTF_8.name()));
 
@@ -177,7 +179,7 @@ public abstract class ServiceInvoker implements JsonHelper {
 		throw new RuntimeException("RefreshToken was not implemented.....");
 	}
 
-	private Map<String, Object> httpCall(Map<String, Object> inDto) {
+	private Map<String, Object> httpCall(Map<String, Object> inDto)  {
 		HttpUriRequest request = null;
 		HttpClient httpClient = HttpClients.createDefault();
 		HttpResponse response = null;
@@ -188,6 +190,9 @@ public abstract class ServiceInvoker implements JsonHelper {
 		} else {
 			request = new HttpGet(this.service.getUrl());
 		}
+		
+		request.addHeader("Authorization", String.format("bearer %s", token.getAccessToken()));
+		request.addHeader("Content-type", "application/json");
 
 		try {
 			response = httpClient.execute(request);
@@ -195,19 +200,40 @@ public abstract class ServiceInvoker implements JsonHelper {
 			throw new RuntimeException(e);
 		}
 
-		if (response.getStatusLine().getStatusCode() != 200) {
-			throw new RuntimeException(
-					"Status is " + response.getStatusLine().getStatusCode() + "\\n" + response.getEntity().toString());
-		}
+		try {
+			if (response.getStatusLine().getStatusCode() != 200) {
+				throw new RuntimeException(
+						"Status is " + response.getStatusLine().getStatusCode() + "\\n" + response.getEntity().toString() + "\\n" + new String(dumpStream(response.getEntity().getContent())));
+			}
 
-		if (response.getEntity().getContentType().getValue().replaceAll("^.*application/json.*$", "").length() == 0) {
-			throw new RuntimeException(
-					"Content-type is " + response.getEntity().getContentType().getValue() + "\\n" + response.getEntity().toString());
+			if (response.getEntity().getContentType().getValue().replaceAll("^.*application/json.*$", "").length() != 0) {
+				throw new RuntimeException(
+						"Content-type is " + response.getEntity().getContentType().getValue() + "\\n" + response.getEntity().toString() + "\\n" + new String(dumpStream(response.getEntity().getContent())));
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
 		
 		try {
 			return json2Map(response.getEntity().getContent());
 		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private byte[] dumpStream(InputStream stream) {
+		try {
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			int len;
+			byte[] buf = new byte[1024];
+			
+			while((len = stream.read(buf)) > 0) {
+				bos.write(buf, 0, len);
+			}
+			
+			bos.close();
+			return bos.toByteArray();
+		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}

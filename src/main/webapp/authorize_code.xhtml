@@ -7,7 +7,7 @@
 <h:head>
 	<title>Demo CA Consume</title>
 </h:head>
-<f:event type="preRenderView" value="#{authorizeCodeBean.performTakeToken()}" />
+<f:event type="preRenderView" listener="#{authorizeCodeBean.performTakeToken()}" />
 <h:body>
 	<f:view>
 		<f:metadata>
@@ -18,7 +18,7 @@
 	<c:set var="returnUrl" value="#{authorizeCodeBean.returnUrl}" />
 	<c:set var="followParams" value="#{authorizeCodeBean.followParams}" />
 	<form id="mainform" action="${returnUrl}" method="get">
-		<c:forEach var="param" items="followParams">
+		<c:forEach var="param" items="${followParams}">
 			<input type="text" name="${param.name}" value="${param.value}"/>
 		</c:forEach>
 	</form>

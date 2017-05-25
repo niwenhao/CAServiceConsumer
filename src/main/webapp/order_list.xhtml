@@ -1,14 +1,50 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-	xmlns:h="http://xmlns.jcp.org/jsf/html">
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
 <h:head>
 	<title>Demo CA Consume</title>
 </h:head>
 <h:body>
 	<h1 class="title">機能一覧</h1>
 	<h:form>
-		<h:inputLink action="order_list">注文一覧</h:inputLink>
+		<h:commandLink action="app_menu">メニューに戻る</h:commandLink>
+		<h:commandButton action="order_list" value="Refresh" />
+		<br />
+		<table>
+			<tr>
+				<td>約定年月日</td>
+				<td>取引コード</td>
+				<td>取引コード</td>
+				<td>発行通貨コード</td>
+				<td>為替レート</td>
+				<td>決済通貨</td>
+				<td>受渡金額</td>
+				<td>精算金額外貨</td>
+				<td>手数料金額</td>
+				<td>手数料金額外貨</td>
+				<td>入出金区分</td>
+				<td>入出金詳細コード</td>
+			</tr>
+			<c:forEach var="order" items="#{orderListBean.orderList}">
+				<tr>
+					<td>${order.TradeDate}</td>
+					<td>${order.CodeOfTransaction}</td>
+					<td>${order.CodeOfTransaction}</td>
+					<td>${order.TypeOfCurrency}</td>
+					<td>${order.ExchangeRateToJPY}</td>
+					<td>${order.SettlementCurrency}</td>
+					<td>${order.AmountOfDelivery}</td>
+					<td>${order.AmountOfSettlement}</td>
+					<td>${order.DeliveryFee}</td>
+					<td>${order.DeliveryFeeOfForeignCurrencytranslation}</td>
+					<td>${order.TypeOfCreditOrWithDrawral}</td>
+					<td>${order.CodeOfPaymentOrWithdrawral}</td>
+				</tr>
+			</c:forEach>
+		</table>
 	</h:form>
 </h:body>
 </html>
