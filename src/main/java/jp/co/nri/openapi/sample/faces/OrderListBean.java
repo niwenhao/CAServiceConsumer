@@ -24,9 +24,6 @@ import jp.co.nri.openapi.sample.persistence.User;
 @ManagedBean
 public class OrderListBean extends ServiceInvoker {
 	
-	private List<Map<String, Object>> orderList;
-
-	@Override
 	protected long getUserId() {
 		return (long)FacesContext.getCurrentInstance().getExternalContext().getSessionMap().get(ConstDef.SK_USER_ID);
 	}
@@ -41,28 +38,19 @@ public class OrderListBean extends ServiceInvoker {
 		return FacesContext.getCurrentInstance().getExternalContext().getApplicationContextPath() + "/order_list.jsf";
 	}
 	
-	@PostConstruct
-	public void searchOrderList() throws IOException {
+	public List<Map<String, Object>> searchOrderList() throws IOException {
 		try {
 			System.out.println("searchOrderList");
 			Map<String, Object> rst = invokeService("order_list", null);
 			rst = (Map<String, Object>)rst.get("aplData");
-			this.orderList = (List<Map<String, Object>>)rst.get("TradingList");
+			return (List<Map<String, Object>>)rst.get("TradingList");
 		} catch (OAuthRedirectException e) {
 			FacesContext.getCurrentInstance().getExternalContext().redirect(e.transRedirectUrl());
-			this.orderList = new ArrayList<>();
+			return new ArrayList<>();
 		}
 	}
 	
 	public void logevent(String event) {
 		System.out.println(event);
-	}
-
-	public List<Map<String, Object>> getOrderList() {
-		return orderList;
-	}
-
-	public void setOrderList(List<Map<String, Object>> orderList) {
-		this.orderList = orderList;
 	}
 }

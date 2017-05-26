@@ -9,11 +9,10 @@
 </h:head>
 <f:event type="javax.faces.event.PreRenderViewEvent"
 	listener="#{clientManEditBean.preRenderView}" />
-<f:event type="javax.faces.event.PostRestoreStateEvent"
-	listener="#{clientManEditBean.preRenderView}" />
 <h:body>
 	<h1 class="title">クライアントをメンテナンス(編集)</h1>
 	<h:form>
+		<h:inputHidden value="#{clientManEditBean.data.id}" />
 		<label>ID：<h:inputText value="#{clientManEditBean.data.ident}" /></label>
 		<br />
 		<label>シークレット：<h:inputText

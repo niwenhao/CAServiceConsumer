@@ -9,11 +9,9 @@
 </h:head>
 <f:event type="javax.faces.event.PreRenderViewEvent"
 	listener="#{userManEditBean.preRenderView}" />
-<f:event type="javax.faces.event.PostRestoreStateEvent"
-	listener="#{userManEditBean.preRenderView}" />
 <h:body>
 	<h1 class="title">クライアントをメンテナンス(編集)</h1>
-	<h:form>
+	<h:form><h:inputHidden value="#{userManEditBean.data.id}" />
 		<label>Username：<h:inputText value="#{userManEditBean.data.name}" /></label>
 		<br />
 		<label>Password：<h:inputSecret

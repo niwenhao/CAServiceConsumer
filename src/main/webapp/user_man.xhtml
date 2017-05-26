@@ -2,6 +2,7 @@
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
 	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
 	xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
 <h:head>
 	<title>ユーザメンテ</title>
@@ -10,15 +11,15 @@
 	<h1 class="title">ユーザをメンテナンス</h1>
 	<h:form>
 		<table>
-			<c:forEach items="${userManBean.listUsers()}" var="user">
+			<ui:repeat value="#{userManBean.listUsers()}" var="user">
 				<tr>
-					<td>${user.name}</td>
+					<td>#{user.name}</td>
 					<td>********</td>
 					<td><h:commandButton action="#{userManBean.update(user.id)}"
 							value="更新" /> <h:commandButton
 							action="#{userManBean.delete(user.id)}" value="削除" /></td>
 				</tr>
-			</c:forEach>
+			</ui:repeat>
 		</table>
 		<h:commandButton action="#{userManBean.append()}" value="追加" />
 		<h:commandButton action="index" value="戻る" />

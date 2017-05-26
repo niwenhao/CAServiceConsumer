@@ -1,10 +1,9 @@
 package jp.co.nri.openapi.sample.faces;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.faces.bean.ManagedBean;
 import javax.faces.context.FacesContext;
-import javax.faces.event.AbortProcessingException;
-import javax.faces.event.ComponentSystemEvent;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.transaction.UserTransaction;
@@ -22,7 +21,7 @@ public class ServiceManEditBean {
 	@PersistenceContext
 	EntityManager em;
 
-	private Service data = null;
+	private Service data = new Service();
 	
 	public Service getData() {
 		return data;
@@ -32,7 +31,8 @@ public class ServiceManEditBean {
 		this.data = data;
 	}
 
-	public void preRenderView(ComponentSystemEvent event) throws AbortProcessingException {
+	@PostConstruct
+	public void preRenderView() {
 		Long id = (Long) FacesContext.getCurrentInstance().getExternalContext().getSessionMap()
 				.get(ConstDef.SK_SERVICE_ID);
 		System.out.println(String.format("preRenderView(%d)", id));

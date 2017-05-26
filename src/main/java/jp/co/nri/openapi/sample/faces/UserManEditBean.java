@@ -21,7 +21,7 @@ public class UserManEditBean {
 	@PersistenceContext
 	EntityManager em;
 
-	private User data = null;
+	private User data = new User();
 	
 	public User getData() {
 		return data;

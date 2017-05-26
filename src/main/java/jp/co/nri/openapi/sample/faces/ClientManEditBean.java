@@ -21,7 +21,7 @@ public class ClientManEditBean {
 	@PersistenceContext
 	EntityManager em;
 
-	private Client data = null;
+	private Client data = new Client();
 	
 	public Client getData() {
 		return data;
@@ -34,7 +34,7 @@ public class ClientManEditBean {
 	public void preRenderView(ComponentSystemEvent event) throws AbortProcessingException {
 		Long id = (Long) FacesContext.getCurrentInstance().getExternalContext().getSessionMap()
 				.get(ConstDef.SK_CLIENT_ID);
-		System.out.println(String.format("preRenderView(%d)", id));
+		System.out.println(String.format("preRenderView(%s)", event.toString()));
 
 		if (null == id) {
 			this.data = new Client();
