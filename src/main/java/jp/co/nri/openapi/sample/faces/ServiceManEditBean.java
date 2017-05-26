@@ -12,6 +12,10 @@ import jp.co.nri.openapi.sample.common.ConstDef;
 import jp.co.nri.openapi.sample.persistence.Client;
 import jp.co.nri.openapi.sample.persistence.Service;
 
+/**
+ * サービス編集View
+ * テンプレート：<a href="../../../../../../templates/service_man_edit.txt">service_man_edit.xhtml</a>
+ */
 @ManagedBean
 public class ServiceManEditBean {
 
@@ -23,14 +27,24 @@ public class ServiceManEditBean {
 
 	private Service data = new Service();
 	
+	/**
+	 * @return	編集データ
+	 */
 	public Service getData() {
 		return data;
 	}
 
+	/**
+	 * @param data	編集データ
+	 */
 	public void setData(Service data) {
 		this.data = data;
 	}
 
+	/**
+	 * データの初期値を設定する。
+	 * その後、JSFフレームによって、いろいろ同期が入る。
+	 */
 	@PostConstruct
 	public void preRenderView() {
 		Long id = (Long) FacesContext.getCurrentInstance().getExternalContext().getSessionMap()
@@ -44,6 +58,11 @@ public class ServiceManEditBean {
 		}
 	}
 
+	/**
+	 * 更新ボタンが押下され、入力データをDBに保存する。
+	 * @return	遷移先
+	 * @throws Exception
+	 */
 	public String update() throws Exception {
 		ut.begin();
 
@@ -61,6 +80,12 @@ public class ServiceManEditBean {
 		return "service_man";
 	}
 
+	/**
+	 * 追加ボタンが押下され、入力データをDBに保存する。
+	 * 
+	 * @return	遷移先
+	 * @throws Exception
+	 */
 	public String append() throws Exception {
 		ut.begin();
 		

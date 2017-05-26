@@ -8,6 +8,10 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 
+/**
+ * @author nwh
+ *
+ */
 @Entity
 @NamedQueries({
 	@NamedQuery(
@@ -35,42 +39,72 @@ public class Service {
 	@ManyToOne
 	private Client client;
 
+	/**
+	 * @return クライアント識別子
+	 */
 	public long getId() {
 		return id;
 	}
 
+	/**
+	 * @param id クライアント識別子
+	 */
 	public void setId(long id) {
 		this.id = id;
 	}
 
+	/**
+	 * @return サービス呼び出すURL
+	 */
 	public String getUrl() {
 		return url;
 	}
 
+	/**
+	 * @param url サービス呼び出すURL
+	 */
 	public void setUrl(String url) {
 		this.url = url;
 	}
 
+	/**
+	 * @return 	サービスが必要なスコップ
+	 */
 	public String getScope() {
 		return scope;
 	}
 
+	/**
+	 * @param scope 	サービスが必要なスコップ
+	 */
 	public void setScope(String scope) {
 		this.scope = scope;
 	}
 
+	/**
+	 * @return 紐づくクライアント
+	 */
 	public Client getClient() {
 		return client;
 	}
 
+	/**
+	 * @param client 紐づくクライアント
+	 */
 	public void setClient(Client client) {
 		this.client = client;
 	}
 
+	/**
+	 * @return サービス名称
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * @param name サービス名称
+	 */
 	public void setName(String name) {
 		this.name = name;
 	}

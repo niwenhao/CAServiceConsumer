@@ -21,23 +21,41 @@ import jp.co.nri.openapi.sample.common.ConstDef;
 import jp.co.nri.openapi.sample.common.ServiceInvoker;
 import jp.co.nri.openapi.sample.persistence.User;
 
+/**
+ * 注文一覧View
+ * テンプレート：<a href="../../../../../../templates/order_list.txt">order_list.xhtml</a>
+ */
 @ManagedBean
 public class OrderListBean extends ServiceInvoker {
 	
+	/* (non-Javadoc)
+	 * @see jp.co.nri.openapi.sample.common.ServiceInvoker#getUserId()
+	 */
+	@Override
 	protected long getUserId() {
 		return (long)FacesContext.getCurrentInstance().getExternalContext().getSessionMap().get(ConstDef.SK_USER_ID);
 	}
 
+	/* (non-Javadoc)
+	 * @see jp.co.nri.openapi.sample.common.ServiceInvoker#getAppParameters()
+	 */
 	@Override
 	protected Map<String, String> getAppParameters() {
 		return new HashMap<>();
 	}
 
+	/* (non-Javadoc)
+	 * @see jp.co.nri.openapi.sample.common.ServiceInvoker#getReturnURL()
+	 */
 	@Override
 	protected String getReturnURL() {
 		return FacesContext.getCurrentInstance().getExternalContext().getApplicationContextPath() + "/order_list.jsf";
 	}
 	
+	/**
+	 * @return	注文一覧をサービスから取得する。
+	 * @throws IOException
+	 */
 	public List<Map<String, Object>> searchOrderList() throws IOException {
 		try {
 			System.out.println("searchOrderList");
@@ -48,9 +66,5 @@ public class OrderListBean extends ServiceInvoker {
 			FacesContext.getCurrentInstance().getExternalContext().redirect(e.transRedirectUrl());
 			return new ArrayList<>();
 		}
-	}
-	
-	public void logevent(String event) {
-		System.out.println(event);
 	}
 }

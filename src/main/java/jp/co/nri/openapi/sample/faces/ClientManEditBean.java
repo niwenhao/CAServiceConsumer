@@ -12,6 +12,10 @@ import javax.transaction.UserTransaction;
 import jp.co.nri.openapi.sample.common.ConstDef;
 import jp.co.nri.openapi.sample.persistence.Client;
 
+/**
+ * クライアント編集View
+ * テンプレート：<a href="../../../../../../templates/client_man_edit.txt">client_man_edit.xhtml</a>
+ */
 @ManagedBean
 public class ClientManEditBean {
 
@@ -23,14 +27,25 @@ public class ClientManEditBean {
 
 	private Client data = new Client();
 	
-	public Client getData() {
-		return data;
-	}
-
+	/**
+	 * @param data 編集対象クライアント
+	 */
 	public void setData(Client data) {
 		this.data = data;
 	}
 
+	/**
+	 * @return	編集対象クライアント
+	 */
+	public Client getData() {
+		return data;
+	}
+
+	/**
+	 * 画面構成する前の処理。データを設定する。
+	 * @param event	イベント
+	 * @throws AbortProcessingException
+	 */
 	public void preRenderView(ComponentSystemEvent event) throws AbortProcessingException {
 		Long id = (Long) FacesContext.getCurrentInstance().getExternalContext().getSessionMap()
 				.get(ConstDef.SK_CLIENT_ID);
@@ -43,18 +58,15 @@ public class ClientManEditBean {
 		}
 	}
 
+	/**
+	 * 更新ボタンを押下した場合の処理、入力データを保存する。
+	 * @return	遷移先
+	 * @throws Exception
+	 */
 	public String update() throws Exception {
 		ut.begin();
 
 		try {
-
-			// Client d = em.find(Client.class, data.getId());
-			// d.setIdent(data.getIdent());
-			// d.setSecret(data.getSecret());
-			// d.setScope(data.getScope());
-			// d.setAuthorizeUrl(data.getAuthorizeUrl());
-			// d.setTokenUrl(data.getTokenUrl());
-
 			Client d = em.merge(data);
 
 			em.persist(d);
@@ -67,6 +79,12 @@ public class ClientManEditBean {
 		return "client_man";
 	}
 
+	/**
+	 * 追加ボタンを押下した場合の処理、入力データの保存。
+	 * 
+	 * @return	遷移先
+	 * @throws Exception
+	 */
 	public String append() throws Exception {
 		ut.begin();
 

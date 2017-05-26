@@ -13,6 +13,10 @@ import java.util.Map;
 import jp.co.nri.openapi.sample.common.*;
 import jp.co.nri.openapi.sample.persistence.Client;
 
+/**
+ * クライアントメンテナンスBean
+ * テンプレート：<a href="../../../../../../templates/client_man.txt">client_man.xhtml</a>
+ */
 @ManagedBean
 public class ClientManBean {
 
@@ -22,6 +26,11 @@ public class ClientManBean {
 	@PersistenceContext
 	EntityManager em;
 
+	/**
+	 * クライアント一覧を提供する。
+	 * 
+	 * @return	クライアント一覧
+	 */
 	public List<Client> listClients() {
 		System.out.println("listClients");
 		CriteriaQuery<Client> query = em.getCriteriaBuilder().createQuery(Client.class);
@@ -29,16 +38,36 @@ public class ClientManBean {
 		return em.createQuery(query.select(root)).getResultList();
 	}
 
+	/**
+	 * サービスメンテ画面に遷移。
+	 * 
+	 * @param id	クライアントオブジェクトID
+	 * @return	遷移先
+	 */
 	public String apiMan(long id) {
 		FacesContext.getCurrentInstance().getExternalContext().getSessionMap().put(ConstDef.SK_CLIENT_ID, id);
 		return "service_man";
 	}
 
+	/**
+	 * クライアント更新画面に遷移。
+	 * 
+	 * @param id	クライアントオブジェクトID
+	 * @return	遷移先
+	 * @throws Exception
+	 */
 	public String update(long id) throws Exception {
 		FacesContext.getCurrentInstance().getExternalContext().getSessionMap().put(ConstDef.SK_CLIENT_ID, id);
 		return "client_man_edit";
 	}
 
+	/**
+	 * クライアントを削除する。
+	 * 
+	 * @param id	クライアントオブジェクトID
+	 * @return	遷移先
+	 * @throws Exception
+	 */
 	public String delete(long id) throws Exception {
 		ut.begin();
 
@@ -48,6 +77,12 @@ public class ClientManBean {
 		return null;
 	}
 
+	/**
+	 * クライアント追加画面に遷移。
+	 * 
+	 * @return	遷移先
+	 * @throws Exception
+	 */
 	public String append() throws Exception {
 		Map<String, Object> map = FacesContext.getCurrentInstance().getExternalContext().getSessionMap();
 		if (map.containsKey(ConstDef.SK_CLIENT_ID))

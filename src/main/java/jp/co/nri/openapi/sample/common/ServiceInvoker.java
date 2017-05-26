@@ -29,22 +29,48 @@ import jp.co.nri.openapi.sample.persistence.Service;
 import jp.co.nri.openapi.sample.persistence.Token;
 import jp.co.nri.openapi.sample.persistence.User;
 
+/**
+ * Oauth認証、遷移機能を提供するヘルパー
+ */
+/**
+ * @author nwh
+ *
+ */
 public abstract class ServiceInvoker implements JsonHelper {
-	
+
+	/**
+	 * Token取得完了後、APPに戻るURLを保持するStateキー
+	 */
 	public static final String RETURN_URL = "returnUrl";
+	/**
+	 * APPに戻るとき、渡すパラメータを保持するStateキー
+	 */
 	public static final String FOLLOW_PARAMETERS = "followParameters";
+	/**
+	 * Token取得処理に使われるClientテーブルのIDを保持するStateキー
+	 */
 	public static final String CLIENT_ID = "clientId";
+	/**
+	 * Token取得処理に使われるUserテーブルのIDを保持するStateキー
+	 */
 	public static final String USER_ID = "userId";
-	
+
 	private User user;
 	private Token token;
 	private Service service;
 	private Client client;
 
+	/**
+	 * トークンの状態。
+	 */
 	enum TOKEN_STATUS {
 		NOT_EXIST, EXPIRED, GRANTED
 	}
 
+	/**
+	 * 認証システムに遷移する必要をAPPに通知する例外。
+	 *
+	 */
 	public static class OAuthRedirectException extends Exception implements JsonHelper {
 		static final long serialVersionUID = 0;
 		private String responseType;
@@ -53,10 +79,14 @@ public abstract class ServiceInvoker implements JsonHelper {
 		private String scope;
 		private Map<String, Object> state = new HashMap<>();
 		private String nonce;
-		
+
 		private String authorizeUrl;
 
-
+		/**
+		 * 遷移先URLを取得する。
+		 * 
+		 * @return		遷移先URL
+		 */
 		public String transRedirectUrl() {
 			try {
 				StringBuilder sb = new StringBuilder(authorizeUrl);
@@ -133,30 +163,44 @@ public abstract class ServiceInvoker implements JsonHelper {
 	@PersistenceContext
 	private EntityManager em;
 
+	/**
+	 * トークン状態チェック
+	 * 
+	 * @param name	呼び出しサービスの名称。
+	 * @return	トークン状態
+	 */
 	private TOKEN_STATUS checkToken(String name) {
-		List<Service> services = em.createNamedQuery(Service.FIND_BY_NAME, Service.class).setParameter("name", name).getResultList();
+		List<Service> services = em.createNamedQuery(Service.FIND_BY_NAME, Service.class).setParameter("name", name)
+				.getResultList();
 		if (services.size() != 1) {
-			throw new RuntimeException(String.format("Find service by %s failed.", name)); 
+			throw new RuntimeException(String.format("Find service by %s failed.", name));
 		}
 		this.service = services.get(0);
 		this.client = service.getClient();
-		
+
 		this.user = em.find(User.class, this.getUserId());
-		
-		List<Token> tokens = em.createNamedQuery(Token.FIND_ALL_BY_USERID_AND_SERVICE_NAME, Token.class).setParameter("user_id", this.getUserId()).setParameter("name", name).getResultList();
+
+		List<Token> tokens = em.createNamedQuery(Token.FIND_ALL_BY_USERID_AND_SERVICE_NAME, Token.class)
+				.setParameter("user_id", this.getUserId()).setParameter("name", name).getResultList();
 		if (tokens.size() != 1) {
 			this.token = null;
 			return TOKEN_STATUS.NOT_EXIST;
 		}
-		
+
 		this.token = tokens.get(0);
 		if (token.getTimeLimit().getTime() < System.currentTimeMillis()) {
 			return TOKEN_STATUS.EXPIRED;
 		}
-		
+
 		return TOKEN_STATUS.GRANTED;
 	}
 
+	/**
+	 * 認証ポイントに遷移するデータ準備。
+	 * 
+	 * 最後にOAuthRedirectExceptionをスルーして、APPが遷移してもらう。
+	 * @throws OAuthRedirectException
+	 */
 	private void redirectToTokenRequire() throws OAuthRedirectException {
 		OAuthRedirectException re = new OAuthRedirectException();
 		re.authorizeUrl = this.client.getAuthorizeUrl();
@@ -165,24 +209,34 @@ public abstract class ServiceInvoker implements JsonHelper {
 		re.requestUri = this.client.getRequestUrl();
 		re.scope = this.client.getScope();
 		Map<String, Object> state = new HashMap<>();
-		
+
 		state.put(RETURN_URL, this.getReturnURL());
 		state.put(FOLLOW_PARAMETERS, this.getAppParameters());
 		state.put(CLIENT_ID, this.client.getId());
 		state.put(USER_ID, user.getId());
 		re.state = state;
-		
+
 		throw re;
 	}
 
+	/**
+	 * 時間切れのトークンを更新する。
+	 */
 	private void refreshToken() {
 		throw new RuntimeException("RefreshToken was not implemented.....");
 	}
 
-	private Map<String, Object> httpCall(Map<String, Object> inDto)  {
+	/**
+	 * サービスを呼び出す。
+	 * 
+	 * @param inDto
+	 * @return	outDto
+	 */
+	private Map<String, Object> httpCall(Map<String, Object> inDto) {
 		HttpUriRequest request = null;
 		HttpClient httpClient = HttpClients.createDefault();
 		HttpResponse response = null;
+		//inDtoは存在しない場合、GET、でなければ、POST
 		if (inDto != null) {
 			HttpPost post = new HttpPost(this.service.getUrl());
 			post.setEntity(new ByteArrayEntity(map2Json(inDto), ContentType.APPLICATION_JSON));
@@ -190,7 +244,8 @@ public abstract class ServiceInvoker implements JsonHelper {
 		} else {
 			request = new HttpGet(this.service.getUrl());
 		}
-		
+
+		//認証情報を入れる。
 		request.addHeader("Authorization", String.format("bearer %s", token.getAccessToken()));
 		request.addHeader("Content-type", "application/json");
 
@@ -201,36 +256,41 @@ public abstract class ServiceInvoker implements JsonHelper {
 		}
 
 		try {
+			//ステータスコードチェック
 			if (response.getStatusLine().getStatusCode() != 200) {
-				throw new RuntimeException(
-						"Status is " + response.getStatusLine().getStatusCode() + "\\n" + response.getEntity().toString() + "\\n" + new String(dumpStream(response.getEntity().getContent())));
+				throw new RuntimeException("Status is " + response.getStatusLine().getStatusCode() + "\\n"
+						+ response.getEntity().toString() + "\\n"
+						+ new String(dumpStream(response.getEntity().getContent())));
 			}
 
-			if (response.getEntity().getContentType().getValue().replaceAll("^.*application/json.*$", "").length() != 0) {
-				throw new RuntimeException(
-						"Content-type is " + response.getEntity().getContentType().getValue() + "\\n" + response.getEntity().toString() + "\\n" + new String(dumpStream(response.getEntity().getContent())));
+			//コンテンツタイプチェック
+			if (response.getEntity().getContentType().getValue().replaceAll("^.*application/json.*$", "")
+					.length() != 0) {
+				throw new RuntimeException("Content-type is " + response.getEntity().getContentType().getValue() + "\\n"
+						+ response.getEntity().toString() + "\\n"
+						+ new String(dumpStream(response.getEntity().getContent())));
 			}
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		
-		try {
 			return json2Map(response.getEntity().getContent());
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
+	/**
+	 * 入力ストリームから内容をバッファに入れる。
+	 * @param stream	入力ストレーム
+	 * @return			バッファ
+	 */
 	private byte[] dumpStream(InputStream stream) {
 		try {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			int len;
 			byte[] buf = new byte[1024];
-			
-			while((len = stream.read(buf)) > 0) {
+
+			while ((len = stream.read(buf)) > 0) {
 				bos.write(buf, 0, len);
 			}
-			
+
 			bos.close();
 			return bos.toByteArray();
 		} catch (IOException e) {
@@ -238,6 +298,14 @@ public abstract class ServiceInvoker implements JsonHelper {
 		}
 	}
 
+	/**
+	 * 外部に対して、サービスを呼び出す機能を提供する。
+	 * 
+	 * @param name		サービス名称
+	 * @param inDto		渡す情報
+	 * @return			サービス呼び出す結果
+	 * @throws OAuthRedirectException	何らがな理由で認証ポイントに遷移するとき使う。
+	 */
 	public Map<String, Object> invokeService(String name, Map<String, Object> inDto) throws OAuthRedirectException {
 		TOKEN_STATUS ts = checkToken(name);
 		if (TOKEN_STATUS.GRANTED == ts) {
@@ -251,42 +319,24 @@ public abstract class ServiceInvoker implements JsonHelper {
 		return null;
 	}
 
+	/**
+	 * このサービスを利用するAPPからユーザIDを取得する。
+	 * 
+	 * @return	ユーザのID
+	 */
 	protected abstract long getUserId();
-	
+
+	/**
+	 * 外部認証が必要な場合、戻すとき、APPに送るバラメータ一覧を取得する。
+	 * 
+	 * @return	パラメータ一覧。
+	 */
 	protected abstract Map<String, String> getAppParameters();
 
+	/**
+	 * 外部認証が必要な場合、戻すときのURL
+	 * @return	URL
+	 */
 	protected abstract String getReturnURL();
 
-	public User getUser() {
-		return user;
-	}
-
-	public void setUser(User user) {
-		this.user = user;
-	}
-
-	public Token getToken() {
-		return token;
-	}
-
-	public void setToken(Token token) {
-		this.token = token;
-	}
-
-	public Service getService() {
-		return service;
-	}
-
-	public void setService(Service service) {
-		this.service = service;
-	}
-
-	public Client getClient() {
-		return client;
-	}
-
-	public void setClient(Client client) {
-		this.client = client;
-	}
-	
 }

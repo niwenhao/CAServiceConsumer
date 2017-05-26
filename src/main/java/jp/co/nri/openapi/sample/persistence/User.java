@@ -35,34 +35,58 @@ public class User {
 	@OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
 	private Set<Token> tokens;
 
+	/**
+	 * @return	ユーザのトークン一覧
+	 */
 	public Set<Token> getTokens() {
 		return tokens;
 	}
 
+	/**
+	 * @param tokens	ユーザのトークン一覧
+	 */
 	public void setTokens(Set<Token> tokens) {
 		this.tokens = tokens;
 	}
 
+	/**
+	 * @return	オブジェクトID
+	 */
 	public long getId() {
 		return id;
 	}
 
+	/**
+	 * @param id	オブジェクトID
+	 */
 	public void setId(long id) {
 		this.id = id;
 	}
 
+	/**
+	 * @return	ユーザ名
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * @param name	ユーザ名
+	 */
 	public void setName(String name) {
 		this.name = name;
 	}
 
+	/**
+	 * @return	パスワード
+	 */
 	public String getPassword() {
 		return password;
 	}
 
+	/**
+	 * @param password	パスワード
+	 */
 	public void setPassword(String password) {
 		this.password = password;
 	}

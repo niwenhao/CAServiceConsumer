@@ -2,13 +2,13 @@ package jp.co.nri.openapi.sample.common;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -21,29 +21,43 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.JsonWriter;
 
+/**
+ * JSON変換するためのヘルパー
+ * 
+ * @author nwh
+ */
 public interface JsonHelper {
-	public static interface ProcessObject {
-		void process(Object obj);
-	}
 
 	public static class Helper {
 
-		static void addImplicitVars(ProcessObject numberBuilder, ProcessObject stringBuilder, Object obj) {
+		/**
+		 * JSONは数字一つ種類のみですので、タイプの統一が必要。
+		 * @param numberBuilder		数値データの受け取り定義。
+		 * @param stringBuilder		文字列データの受け取り定義。
+		 * @param obj				処理データ
+		 */
+		static void addImplicitVars(Consumer<BigDecimal> numberBuilder, Consumer<String> stringBuilder, Object obj) {
 			if (obj instanceof Integer) {
-				numberBuilder.process(new BigDecimal((Integer) obj));
+				numberBuilder.accept(new BigDecimal((Integer) obj));
 			} else if (obj instanceof Long) {
-				numberBuilder.process(new BigDecimal((Long) obj));
+				numberBuilder.accept(new BigDecimal((Long) obj));
 			} else if (obj instanceof Float) {
-				numberBuilder.process(new BigDecimal((Float) obj));
+				numberBuilder.accept(new BigDecimal((Float) obj));
 			} else if (obj instanceof Double) {
-				numberBuilder.process(new BigDecimal((Double) obj));
+				numberBuilder.accept(new BigDecimal((Double) obj));
 			} else if (obj instanceof BigDecimal) {
-				numberBuilder.process((BigDecimal) obj);
+				numberBuilder.accept((BigDecimal) obj);
 			} else {
-				stringBuilder.process(obj.toString());
+				stringBuilder.accept(obj.toString());
 			}
 		}
 
+		/**
+		 * JavaのMapをJsonに変換する。
+		 * 
+		 * @param map	変換対象
+		 * @return		mapを取り込んだビルド
+		 */
 		static JsonObjectBuilder convertMapToJson(Map<String, Object> map) {
 			JsonObjectBuilder jb = Json.createObjectBuilder();
 
@@ -63,6 +77,11 @@ public interface JsonHelper {
 			return jb;
 		}
 
+		/**
+		 * Javaの配列をJsonに変換する。
+		 * @param list	変換対象
+		 * @return		listを取り込んだビルド
+		 */
 		static JsonArrayBuilder convertListToJson(List<Object> list) {
 			JsonArrayBuilder jb = Json.createArrayBuilder();
 			list.forEach((v) -> {
@@ -82,6 +101,11 @@ public interface JsonHelper {
 			return jb;
 		}
 
+		/**
+		 * JsonオブジェクトをJava MAPに変換する
+		 * @param json	Jsonオブジェクト
+		 * @return		変換結果
+		 */
 		static Map<String, Object> convertJsonToMap(JsonObject json) {
 			Map<String, Object> rst = new HashMap<>();
 			json.forEach((k, v) -> {
@@ -90,6 +114,11 @@ public interface JsonHelper {
 			return rst;
 		}
 
+		/**
+		 * Jsonの配列をJava Listに変換する。
+		 * @param json	変換対象
+		 * @return		変換結果
+		 */
 		static List<Object> convertJsonToList(JsonArray json) {
 			List<Object> rst = new ArrayList<>();
 			json.forEach((v) -> {
@@ -98,6 +127,12 @@ public interface JsonHelper {
 			return rst;
 		}
 
+		/**
+		 * JSONデータをJavaオブジェクトに変換。
+		 * 
+		 * @param json		Jsonデータ
+		 * @return			変換結果
+		 */
 		static Object convertJsonToObj(JsonValue json) {
 			if (json instanceof JsonObject) {
 				return convertJsonToMap((JsonObject) json);
@@ -116,6 +151,12 @@ public interface JsonHelper {
 		}
 	}
 
+	/**
+	 * Java mapをJsonテキストに変換。
+	 * 
+	 * @param input	Java map
+	 * @return		変換結果
+	 */
 	default byte[] map2Json(Map<String, Object> input) {
 		JsonObjectBuilder jb = Helper.convertMapToJson(input);
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -125,6 +166,12 @@ public interface JsonHelper {
 		return stream.toByteArray();
 	}
 
+	/**
+	 * Java listをJsonテキストに変換。
+	 * 
+	 * @param input	Java list
+	 * @return		変換結果
+	 */
 	default byte[] list2Json(List<Object> input) {
 		JsonArrayBuilder jb = Helper.convertListToJson(input);
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -134,16 +181,34 @@ public interface JsonHelper {
 		return stream.toByteArray();
 	}
 
+	/**
+	 * JsonテキストをJava mapに変換。
+	 * 
+	 * @param input		Jsonテキストバッファ
+	 * @return			変換結果
+	 */
 	default Map<String, Object> json2Map(byte[] input) {
 		ByteArrayInputStream stream = new ByteArrayInputStream(input);
 		return json2Map(stream);
 	}
 
+	/**
+	 * JsonテキストをJava listに変換。
+	 * 
+	 * @param input		Jsonテキストバッファ
+	 * @return			変換結果
+	 */
 	default List<Object> json2List(byte[] input) {
 		ByteArrayInputStream stream = new ByteArrayInputStream(input);
 		return json2List(stream);
 	}
 
+	/**
+	 * JsonテキストをJava mapに変換。
+	 * 
+	 * @param input		Jsonテキストストリーム
+	 * @return			変換結果
+	 */
 	default Map<String, Object> json2Map(InputStream input) {
 		JsonReader reader = Json.createReader(input);
 		JsonObject json = reader.readObject();
@@ -151,6 +216,12 @@ public interface JsonHelper {
 		return Helper.convertJsonToMap(json);
 	}
 
+	/**
+	 * JsonテキストをJava listに変換。
+	 * 
+	 * @param input		Jsonテキストストリーム
+	 * @return			変換結果
+	 */
 	default List<Object> json2List(InputStream input) {
 		JsonReader reader = Json.createReader(input);
 		JsonArray json = reader.readArray();

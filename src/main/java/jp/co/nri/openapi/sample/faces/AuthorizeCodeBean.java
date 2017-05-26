@@ -29,6 +29,10 @@ import jp.co.nri.openapi.sample.persistence.Client;
 import jp.co.nri.openapi.sample.persistence.Token;
 import jp.co.nri.openapi.sample.persistence.User;
 
+/**
+ * 認証コードを受け取って、TOKEN取得処理View。
+ * テンプレート：<a href="../../../../../../templates/authorize_code.txt">authorize_code.xhtml</a>
+ */
 @ManagedBean
 public class AuthorizeCodeBean implements JsonHelper {
 	@Resource
@@ -45,7 +49,13 @@ public class AuthorizeCodeBean implements JsonHelper {
 
 	List<String[]> followParams;
 
+	/**
+	 * 認証コードとステータスでトークンを取得し、DBに保存する。
+	 * 
+	 * @throws Exception
+	 */
 	public void performTakeToken() throws Exception {
+		//ステータスをデーコードする
 		Map<String, Object> state = json2Map(
 				URLDecoder.decode(stateEncoded, StandardCharsets.UTF_8.name()).getBytes(StandardCharsets.UTF_8));
 		returnUrl = (String) state.get(ServiceInvoker.RETURN_URL);
@@ -59,12 +69,14 @@ public class AuthorizeCodeBean implements JsonHelper {
 		long clientId = ((BigDecimal) state.get(ServiceInvoker.CLIENT_ID)).longValue();
 		try {
 			ut.begin();
+			//トークンと関連するデータを取得しておく
 			User user = em.find(User.class, userId);
 			Client client = em.find(Client.class, clientId);
 
 			HttpClient httpClient = HttpClients.createDefault();
 
 			HttpPost post = new HttpPost(client.getTokenUrl());
+			//トークンを取得するためのパラメータを組み立て
 			List<NameValuePair> paramList = new ArrayList<>();
 			paramList.add(new BasicNameValuePair("grant_type", "authorization_code"));
 			paramList.add(new BasicNameValuePair("code", this.authCode));
@@ -73,19 +85,23 @@ public class AuthorizeCodeBean implements JsonHelper {
 			paramList.add(new BasicNameValuePair("client_secret", client.getSecret()));
 			post.setEntity(new UrlEncodedFormEntity(paramList));
 
+			//トークンエンドポイントにアクセス。
 			HttpResponse response = httpClient.execute(post);
 
+			//ステータスチェック
 			if (response.getStatusLine().getStatusCode() != 200) {
 				throw new RuntimeException(
 						"Status code: " + response.getStatusLine().getStatusCode() + "\n" + response.toString());
 			}
 
+			//コンテンツタイプチェック
 			if (response.getEntity().getContentType().getValue().replaceAll("^.*application/json.*$", "")
 					.length() != 0) {
 				throw new RuntimeException("Content-type: " + response.getEntity().getContentType().getValue() + "\n"
 						+ response.toString());
 			}
 
+			//トークン関連情報をDBに保存。
 			Map<String, Object> rst = json2Map(response.getEntity().getContent());
 
 			Token token = new Token();
@@ -105,34 +121,58 @@ public class AuthorizeCodeBean implements JsonHelper {
 		}
 	}
 
+	/**
+	 * @return	認証コード（パラメータ受け取り用）
+	 */
 	public String getAuthCode() {
 		return authCode;
 	}
 
+	/**
+	 * @param authCode	認証コード（パラメータ受け取り用）
+	 */
 	public void setAuthCode(String authCode) {
 		this.authCode = authCode;
 	}
 
+	/**
+	 * @return	エンコードしたステータス（パラメータ受け取り用）
+	 */
 	public String getStateEncoded() {
 		return stateEncoded;
 	}
 
+	/**
+	 * @param stateEncoded	エンコードしたステータス（パラメータ受け取り用）
+	 */
 	public void setStateEncoded(String stateEncoded) {
 		this.stateEncoded = stateEncoded;
 	}
 
+	/**
+	 * @return	APPに戻るURL
+	 */
 	public String getReturnUrl() {
 		return returnUrl;
 	}
 
+	/**
+	 * @param returnUrl	APPに戻るURL
+	 */
 	public void setReturnUrl(String returnUrl) {
 		this.returnUrl = returnUrl;
 	}
 
+	/**
+	 * @return	APPに転送するパラメータ
+	 */
 	public List<String[]> getFollowParams() {
 		return followParams;
 	}
 
+	/**
+	 * @param followParams	APPに転送するパラメータ
+	 */
 	public void setFollowParams(List<String[]> followParams) {
 		this.followParams = followParams;
 	}

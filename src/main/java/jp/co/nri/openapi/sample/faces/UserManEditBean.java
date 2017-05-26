@@ -12,6 +12,10 @@ import javax.transaction.UserTransaction;
 import jp.co.nri.openapi.sample.common.ConstDef;
 import jp.co.nri.openapi.sample.persistence.User;
 
+/**
+ * ユーザ編集View
+ * テンプレート：<a href="../../../../../../templates/user_man_edit.txt">user_man_edit.xhtml</a>
+ */
 @ManagedBean
 public class UserManEditBean {
 
@@ -23,14 +27,27 @@ public class UserManEditBean {
 
 	private User data = new User();
 	
+	/**
+	 * @return	編集対象USER
+	 */
 	public User getData() {
 		return data;
 	}
 
+	/**
+	 * @param data	編集対象USER
+	 */
 	public void setData(User data) {
 		this.data = data;
 	}
 
+	/**
+	 * 編集対象のユーザデータを初期化。
+	 * 
+	 * その後JSFによって、更新される。
+	 * @param event
+	 * @throws AbortProcessingException
+	 */
 	public void preRenderView(ComponentSystemEvent event) throws AbortProcessingException {
 		Long id = (Long) FacesContext.getCurrentInstance().getExternalContext().getSessionMap()
 				.get(ConstDef.SK_USER_ID);
@@ -43,6 +60,11 @@ public class UserManEditBean {
 		}
 	}
 
+	/**
+	 * 更新ボタンが押下され、入力データをDBに保存する。
+	 * @return	遷移先
+	 * @throws Exception
+	 */
 	public String update() throws Exception {
 		ut.begin();
 
@@ -60,6 +82,11 @@ public class UserManEditBean {
 		return "user_man";
 	}
 
+	/**
+	 * 追加ボタンが押下され、入力データをDBに保存する。
+	 * @return	遷移先
+	 * @throws Exception
+	 */
 	public String append() throws Exception {
 		ut.begin();
 

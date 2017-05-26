@@ -27,50 +27,86 @@ public class Token {
 	@ManyToOne
 	private Client client;
 
+	/**
+	 * @return	オブジェクトID
+	 */
 	public long getId() {
 		return id;
 	}
 
+	/**
+	 * @param id	オブジェクトID
+	 */
 	public void setId(long id) {
 		this.id = id;
 	}
 
+	/**
+	 * @return	アクセストークン
+	 */
 	public String getAccessToken() {
 		return accessToken;
 	}
 
+	/**
+	 * @param accessToken	アクセストークン
+	 */
 	public void setAccessToken(String accessToken) {
 		this.accessToken = accessToken;
 	}
 
+	/**
+	 * @return	リフレシュトークン
+	 */
 	public String getRefreshToken() {
 		return refreshToken;
 	}
 
+	/**
+	 * @param refreshToken	リフレシュトークン
+	 */
 	public void setRefreshToken(String refreshToken) {
 		this.refreshToken = refreshToken;
 	}
 
+	/**
+	 * @return	有効期間
+	 */
 	public Date getTimeLimit() {
 		return timeLimit;
 	}
 
+	/**
+	 * @param timeLimit	有効期間
+	 */
 	public void setTimeLimit(Date timeLimit) {
 		this.timeLimit = timeLimit;
 	}
 
+	/**
+	 * @return	紐づくユーザ
+	 */
 	public User getUser() {
 		return user;
 	}
 
+	/**
+	 * @param user	紐づくユーザ
+	 */
 	public void setUser(User user) {
 		this.user = user;
 	}
 
+	/**
+	 * @return	紐づくクライアント
+	 */
 	public Client getClient() {
 		return client;
 	}
 
+	/**
+	 * @param client	紐づくクライアント
+	 */
 	public void setClient(Client client) {
 		this.client = client;
 	}
