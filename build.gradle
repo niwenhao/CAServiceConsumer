@@ -33,12 +33,15 @@ task jboss(dependsOn: war, type:Copy, group: "deploy") {
 }
 
 javadoc.doLast {
-	jsfdir = "${projectDir}/src/main/webapp"
-	templatesdir = "${projectDir}/build/doc/javadoc/templates"
+	String jsfdir = "${projectDir}/src/main/webapp"
+	String templatesdir = "${projectDir}/build/docs/javadoc/templates"
 	"mkdir -p ${templatesdir}".execute().waitFor()
-	"ls -1 ${jsfdir}/*.xhtml".execute().inputStream.eachLine {
-		fileFrom = jsfdir + "/" + it;
-		fileTo = templatesdir + "/" + it.replactAll(/xhtml$/, "txt");
-		"cp ${fileFrom} ${fileTo}".execute().waitFor();
+
+	"ls -1 ${jsfdir}".execute().getIn().eachLine { f ->
+		if (f.endsWith(".xhtml")) {
+			String fileFrom = jsfdir + "/" + f;
+			String fileTo = templatesdir + "/" + f.replaceAll(/xhtml$/, "txt");
+			"cp ${fileFrom} ${fileTo}".execute().waitFor();
+		}
 	} 
 }
