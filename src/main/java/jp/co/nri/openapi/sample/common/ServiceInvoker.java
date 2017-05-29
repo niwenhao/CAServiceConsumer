@@ -4,8 +4,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,16 +16,20 @@ import java.util.Map;
 import javax.annotation.Resource;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 
 import jp.co.nri.openapi.sample.persistence.Client;
 import jp.co.nri.openapi.sample.persistence.Service;
@@ -85,7 +92,7 @@ public abstract class ServiceInvoker implements JsonHelper {
 		/**
 		 * 遷移先URLを取得する。
 		 * 
-		 * @return		遷移先URL
+		 * @return 遷移先URL
 		 */
 		public String transRedirectUrl() {
 			try {
@@ -166,8 +173,9 @@ public abstract class ServiceInvoker implements JsonHelper {
 	/**
 	 * トークン状態チェック
 	 * 
-	 * @param name	呼び出しサービスの名称。
-	 * @return	トークン状態
+	 * @param name
+	 *            呼び出しサービスの名称。
+	 * @return トークン状態
 	 */
 	private TOKEN_STATUS checkToken(String name) {
 		List<Service> services = em.createNamedQuery(Service.FIND_BY_NAME, Service.class).setParameter("name", name)
@@ -199,6 +207,7 @@ public abstract class ServiceInvoker implements JsonHelper {
 	 * 認証ポイントに遷移するデータ準備。
 	 * 
 	 * 最後にOAuthRedirectExceptionをスルーして、APPが遷移してもらう。
+	 * 
 	 * @throws OAuthRedirectException
 	 */
 	private void redirectToTokenRequire() throws OAuthRedirectException {
@@ -223,20 +232,79 @@ public abstract class ServiceInvoker implements JsonHelper {
 	 * 時間切れのトークンを更新する。
 	 */
 	private void refreshToken() {
-		throw new RuntimeException("RefreshToken was not implemented.....");
+
+		try {
+			ut.begin();
+			// トークンと関連するデータを取得しておく
+			user = em.merge(user);
+			client = em.merge(client);
+
+			HttpClient httpClient = HttpClients.createDefault();
+
+			HttpPost post = new HttpPost(client.getTokenUrl());
+			// トークンを取得するためのパラメータを組み立て
+			List<NameValuePair> paramList = new ArrayList<>();
+			paramList.add(new BasicNameValuePair("grant_type", "refresh_token"));
+			paramList.add(new BasicNameValuePair("refresh_token", token.getRefreshToken()));
+			paramList.add(new BasicNameValuePair("scope", client.getScope()));
+			paramList.add(new BasicNameValuePair("client_id", client.getIdent()));
+			paramList.add(new BasicNameValuePair("client_secret", client.getSecret()));
+			post.setEntity(new UrlEncodedFormEntity(paramList));
+
+			// トークンエンドポイントにアクセス。
+			HttpResponse response = httpClient.execute(post);
+
+			// ステータスチェック
+			if (response.getStatusLine().getStatusCode() != 200) {
+				throw new RuntimeException(
+						"Status code: " + response.getStatusLine().getStatusCode() + "\n" + response.toString());
+			}
+
+			// コンテンツタイプチェック
+			if (response.getEntity().getContentType().getValue().replaceAll("^.*application/json.*$", "")
+					.length() != 0) {
+				throw new RuntimeException("Content-type: " + response.getEntity().getContentType().getValue() + "\n"
+						+ response.toString());
+			}
+
+			// トークン関連情報をDBに保存。
+			Map<String, Object> rst = json2Map(response.getEntity().getContent());
+
+			token.setAccessToken((String) rst.get("access_token"));
+			token.setRefreshToken((String) rst.get("refresh_token"));
+			token.setTimeLimit(
+					new Date(System.currentTimeMillis() + ((BigDecimal) rst.get("expires_in")).longValue() * 1000));
+
+			token.setUser(user);
+			token.setClient(client);
+			
+			token = em.merge(token);
+
+			em.persist(token);
+
+			ut.commit();
+		} catch (Exception e) {
+			try {
+				ut.rollback();
+			} catch (Exception e1) {
+				throw new RuntimeException(e1);
+			} finally {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 
 	/**
 	 * サービスを呼び出す。
 	 * 
 	 * @param inDto
-	 * @return	outDto
+	 * @return outDto
 	 */
 	private Map<String, Object> httpCall(Map<String, Object> inDto) {
 		HttpUriRequest request = null;
 		HttpClient httpClient = HttpClients.createDefault();
 		HttpResponse response = null;
-		//inDtoは存在しない場合、GET、でなければ、POST
+		// inDtoは存在しない場合、GET、でなければ、POST
 		if (inDto != null) {
 			HttpPost post = new HttpPost(this.service.getUrl());
 			post.setEntity(new ByteArrayEntity(map2Json(inDto), ContentType.APPLICATION_JSON));
@@ -245,7 +313,7 @@ public abstract class ServiceInvoker implements JsonHelper {
 			request = new HttpGet(this.service.getUrl());
 		}
 
-		//認証情報を入れる。
+		// 認証情報を入れる。
 		request.addHeader("Authorization", String.format("bearer %s", token.getAccessToken()));
 		request.addHeader("Content-type", "application/json");
 
@@ -256,14 +324,14 @@ public abstract class ServiceInvoker implements JsonHelper {
 		}
 
 		try {
-			//ステータスコードチェック
+			// ステータスコードチェック
 			if (response.getStatusLine().getStatusCode() != 200) {
 				throw new RuntimeException("Status is " + response.getStatusLine().getStatusCode() + "\\n"
 						+ response.getEntity().toString() + "\\n"
 						+ new String(dumpStream(response.getEntity().getContent())));
 			}
 
-			//コンテンツタイプチェック
+			// コンテンツタイプチェック
 			if (response.getEntity().getContentType().getValue().replaceAll("^.*application/json.*$", "")
 					.length() != 0) {
 				throw new RuntimeException("Content-type is " + response.getEntity().getContentType().getValue() + "\\n"
@@ -278,8 +346,10 @@ public abstract class ServiceInvoker implements JsonHelper {
 
 	/**
 	 * 入力ストリームから内容をバッファに入れる。
-	 * @param stream	入力ストレーム
-	 * @return			バッファ
+	 * 
+	 * @param stream
+	 *            入力ストレーム
+	 * @return バッファ
 	 */
 	private byte[] dumpStream(InputStream stream) {
 		try {
@@ -301,10 +371,13 @@ public abstract class ServiceInvoker implements JsonHelper {
 	/**
 	 * 外部に対して、サービスを呼び出す機能を提供する。
 	 * 
-	 * @param name		サービス名称
-	 * @param inDto		渡す情報
-	 * @return			サービス呼び出す結果
-	 * @throws OAuthRedirectException	何らがな理由で認証ポイントに遷移するとき使う。
+	 * @param name
+	 *            サービス名称
+	 * @param inDto
+	 *            渡す情報
+	 * @return サービス呼び出す結果
+	 * @throws OAuthRedirectException
+	 *             何らがな理由で認証ポイントに遷移するとき使う。
 	 */
 	public Map<String, Object> invokeService(String name, Map<String, Object> inDto) throws OAuthRedirectException {
 		TOKEN_STATUS ts = checkToken(name);
@@ -322,20 +395,21 @@ public abstract class ServiceInvoker implements JsonHelper {
 	/**
 	 * このサービスを利用するAPPからユーザIDを取得する。
 	 * 
-	 * @return	ユーザのID
+	 * @return ユーザのID
 	 */
 	protected abstract long getUserId();
 
 	/**
 	 * 外部認証が必要な場合、戻すとき、APPに送るバラメータ一覧を取得する。
 	 * 
-	 * @return	パラメータ一覧。
+	 * @return パラメータ一覧。
 	 */
 	protected abstract Map<String, String> getAppParameters();
 
 	/**
 	 * 外部認証が必要な場合、戻すときのURL
-	 * @return	URL
+	 * 
+	 * @return URL
 	 */
 	protected abstract String getReturnURL();
 

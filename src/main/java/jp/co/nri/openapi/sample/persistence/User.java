@@ -32,7 +32,7 @@ public class User {
 
 	private String password;
 
-	@OneToMany(cascade = CascadeType.ALL, mappedBy = "user")
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "user", orphanRemoval=true)
 	private Set<Token> tokens;
 
 	/**

@@ -1,5 +1,6 @@
 package jp.co.nri.openapi.sample.faces;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -8,9 +9,15 @@ import javax.faces.bean.ManagedBean;
 import javax.faces.context.FacesContext;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
+import javax.transaction.NotSupportedException;
+import javax.transaction.RollbackException;
+import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
 import jp.co.nri.openapi.sample.common.ConstDef;
+import jp.co.nri.openapi.sample.persistence.Token;
 import jp.co.nri.openapi.sample.persistence.User;
 
 /**
@@ -21,24 +28,26 @@ import jp.co.nri.openapi.sample.persistence.User;
 public class UserManBean {
 
 	@Resource
-    UserTransaction ut;
+	UserTransaction ut;
 
 	@PersistenceContext
 	EntityManager em;
 
 	/**
 	 * ユーザ一覧を取得する。
-	 * @return	ユーザ一覧
+	 * 
+	 * @return ユーザ一覧
 	 */
 	public List<User> listUsers() {
 		return em.createNamedQuery(User.LIST_ALL_USERS, User.class).getResultList();
 	}
-	
+
 	/**
 	 * 更新画面に遷移する。
 	 * 
-	 * @param id	ユーザのオブジェクトID
-	 * @return	遷移先
+	 * @param id
+	 *            ユーザのオブジェクトID
+	 * @return 遷移先
 	 * @throws Exception
 	 */
 	public String update(long id) throws Exception {
@@ -49,8 +58,9 @@ public class UserManBean {
 	/**
 	 * ユーザを削除する。
 	 * 
-	 * @param id	ユーザのオブジェクトID
-	 * @return	遷移先
+	 * @param id
+	 *            ユーザのオブジェクトID
+	 * @return 遷移先
 	 * @throws Exception
 	 */
 	public String delete(long id) throws Exception {
@@ -62,11 +72,38 @@ public class UserManBean {
 
 		return null;
 	}
-	
+
+	/**
+	 * システム混乱するときを考え、ユーザのすべてのトークンを削除する。
+	 * 
+	 * @param id	ユーザのオブジェクトID
+	 * @return	遷移先。
+	 */
+	public String reset_token(long id) {
+		try {
+			ut.begin();
+
+			User u = em.find(User.class, id);
+			u.getTokens().clear();
+			
+			em.persist(u);
+
+			ut.commit();
+			return null;
+		} catch (Exception e) {
+			try {
+				ut.rollback();
+			} catch (Exception e1) {
+				throw new RuntimeException(e1);
+			}
+			throw new RuntimeException(e);
+		}
+	}
+
 	/**
 	 * 追加画面に遷移する。
 	 * 
-	 * @return	遷移先
+	 * @return 遷移先
 	 * @throws Exception
 	 */
 	public String append() throws Exception {
