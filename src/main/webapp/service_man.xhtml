@@ -12,6 +12,12 @@
 	<h1 class="title">サービスをメンテナンス</h1>
 	<h:form>
 		<table>
+			<tr>
+				<td>API名称</td>
+				<td>API提供URL</td>
+				<td>スコップ</td>
+				<td>操作</td>
+			</tr>
 			<ui:repeat value="#{serviceManBean.listServices()}" var="service">
 				<tr>
 					<td>#{service.name}</td>

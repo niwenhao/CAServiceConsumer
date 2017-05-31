@@ -12,6 +12,15 @@
 	<h1 class="title">クライアントをメンテナンス</h1>
 	<h:form>
 		<table>
+			<tr>
+				<td>クライアントID</td>
+				<td>シークレット</td>
+				<td>スコップ</td>
+				<td>認証URL</td>
+				<td>トークンURL</td>
+				<td>レスポンスURL</td>
+				<td>操作</td>
+			</tr>
 			<ui:repeat var="client" value="#{clientManBean.listClients()}">
 				<tr>
 					<td>${client.ident}</td>

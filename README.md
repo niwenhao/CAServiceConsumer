@@ -1,5 +1,7 @@
 # J2EEでCAサービス利用APPを実装してみる。
 
+## サーバ設定。
+
 試験的にWildfly10で動きました。データソース設定は下記。
 INSTALL_DIR/standalone/configuration/standalone.xml
 
@@ -56,3 +58,10 @@ INSTALL_DIR/modules/system/layers/base/com/mysql/main/module.xml
                 <module name="javax.servlet.api" optional="true"/>
             </dependencies>
         </module>
+
+## 利用方法
+
+1. メニュー画面
+
+　　`http://192.168.56.11:8080/CAServiceConsumer/user_man.jsf`
+

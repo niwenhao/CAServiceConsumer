@@ -11,13 +11,18 @@
 	<h1 class="title">ユーザをメンテナンス</h1>
 	<h:form>
 		<table>
+			<tr>
+				<td>Username</td>
+				<td>Password</td>
+				<td>Operation</td>
+			</tr>
 			<ui:repeat value="#{userManBean.listUsers()}" var="user">
 				<tr>
 					<td>#{user.name}</td>
 					<td>********</td>
-					<td><h:commandButton action="#{userManBean.reset_token(user.id)}"
-							value="トークンクリア" />&nbsp;<h:commandButton action="#{userManBean.update(user.id)}"
-							value="更新" />&nbsp;<h:commandButton
+					<td><h:commandButton
+							action="#{userManBean.reset_token(user.id)}" value="トークンクリア" />&nbsp;<h:commandButton
+							action="#{userManBean.update(user.id)}" value="更新" />&nbsp;<h:commandButton
 							action="#{userManBean.delete(user.id)}" value="削除" /></td>
 				</tr>
 			</ui:repeat>
