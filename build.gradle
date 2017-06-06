@@ -26,11 +26,18 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
-task jboss(dependsOn: war, type:Copy, group: "deploy") {
-	description 'Deploy war to jboss'
-	from 'build/libs/CAServiceConsumer.war'
-	into '/opt/jboss/standalone/deployments/'
+//task jboss(dependsOn: war, type:Copy, group: "deploy") {
+//	description 'Deploy war to jboss'
+//	from 'build/libs/CAServiceConsumer.war'
+//	into '/opt/jboss/standalone/deployments/'
+//}
+task jboss(dependsOn: war, type:Exec, group: "deploy") {
+	workingDir "${projectDir}/build/libs"
+	commandLine "bash", "-c", "sudo docker cp CAServiceConsumer.war jboss:/opt/jboss/wildfly/standalone/deployments/ROOT.war 2>&1"
 }
+//war.doLast {
+//	"sudo docker cp ${projectDir}/build/libs/CAServiceConsumer.war /opt/jboss/wildfly/standalone/deployments/".execute().waitFor()
+//}
 
 javadoc.doLast {
 	String jsfdir = "${projectDir}/src/main/webapp"
