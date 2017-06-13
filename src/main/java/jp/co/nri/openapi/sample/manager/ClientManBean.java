@@ -1,4 +1,4 @@
-package jp.co.nri.openapi.sample.faces;
+package jp.co.nri.openapi.sample.manager;
 
 import javax.faces.bean.*;
 import javax.faces.context.*;

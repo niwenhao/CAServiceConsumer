@@ -1,19 +1,26 @@
-package jp.co.nri.openapi.sample.faces;
+package jp.co.nri.openapi.sample.common;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Resource;
 import javax.faces.bean.ManagedBean;
+import javax.faces.context.FacesContext;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.transaction.UserTransaction;
-import javax.xml.stream.events.Characters;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -23,8 +30,9 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 
-import jp.co.nri.openapi.sample.common.JsonHelper;
-import jp.co.nri.openapi.sample.common.ServiceInvoker;
+import com.fasterxml.jackson.databind.util.ByteBufferBackedOutputStream;
+
+import io.jsonwebtoken.Claims;
 import jp.co.nri.openapi.sample.persistence.Client;
 import jp.co.nri.openapi.sample.persistence.Token;
 import jp.co.nri.openapi.sample.persistence.User;
@@ -34,7 +42,7 @@ import jp.co.nri.openapi.sample.persistence.User;
  * テンプレート：<a href="../../../../../../templates/authorize_code.txt">authorize_code.xhtml</a>
  */
 @ManagedBean
-public class AuthorizeCodeBean implements JsonHelper {
+public class AuthorizeCodeBean implements JsonHelper, OpenIdHelper, CommonFunction {
 	@Resource
 	UserTransaction ut;
 
@@ -48,6 +56,56 @@ public class AuthorizeCodeBean implements JsonHelper {
 	String returnUrl;
 
 	List<String[]> followParams;
+	
+	private static byte[] authServerCert = null;
+	
+	public static synchronized byte[] getAuthServerCert() {
+		if (authServerCert!= null) {
+			return authServerCert;
+		}
+		
+		FileReader fileReader = null;
+		BufferedReader reader = null;
+		
+		StringBuilder sb;
+		try {
+			fileReader = new FileReader(System.getProperty("openapi.cert_path"));
+			reader = new BufferedReader(fileReader);
+			
+			boolean keyStarted = false;
+			
+			sb = new StringBuilder();
+			
+			String line = null;
+			while((line = reader.readLine()) != null) {
+				if (line.startsWith("-----BEGIN CERTIFICATE-----")) {
+					keyStarted = true;
+					continue;
+				}
+				if (line.startsWith("-----END CERTIFICATE-----")) {
+					keyStarted = true;
+					continue;
+				}
+				if (keyStarted) {
+					sb.append(line);
+				}
+			}
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		} finally {
+			if (fileReader != null) {
+				try {
+				fileReader.close();
+				} catch(IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
+		}
+		
+		authServerCert = Base64.getDecoder().decode(sb.toString());
+		
+		return authServerCert;
+	}
 
 	/**
 	 * 認証コードとステータスでトークンを取得し、DBに保存する。
@@ -67,6 +125,8 @@ public class AuthorizeCodeBean implements JsonHelper {
 
 		long userId = ((BigDecimal) state.get(ServiceInvoker.USER_ID)).longValue();
 		long clientId = ((BigDecimal) state.get(ServiceInvoker.CLIENT_ID)).longValue();
+		
+		String nonce = (String)FacesContext.getCurrentInstance().getExternalContext().getSessionMap().get(ConstDef.SK_NONCE_VALUE);
 		try {
 			ut.begin();
 			//トークンと関連するデータを取得しておく
@@ -100,10 +160,15 @@ public class AuthorizeCodeBean implements JsonHelper {
 				throw new RuntimeException("Content-type: " + response.getEntity().getContentType().getValue() + "\n"
 						+ response.toString());
 			}
+			
 
 			//トークン関連情報をDBに保存。
-			Map<String, Object> rst = json2Map(response.getEntity().getContent());
-
+			Map<String, Object> rst = json2Map(duplicateInputStream(System.out, response.getEntity().getContent()));
+			
+			String idToken = (String)rst.get("id_token");
+			Claims claims = this.parseIdToken(AuthorizeCodeBean.getAuthServerCert(), idToken);
+			
+			
 			Token token = new Token();
 			token.setAccessToken((String) rst.get("access_token"));
 			token.setRefreshToken((String) rst.get("refresh_token"));

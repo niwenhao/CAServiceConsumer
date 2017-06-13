@@ -1,4 +1,4 @@
-package jp.co.nri.openapi.sample.faces;
+package jp.co.nri.openapi.sample.manager;
 
 import javax.annotation.Resource;
 import javax.faces.bean.ManagedBean;
@@ -10,14 +10,14 @@ import javax.persistence.PersistenceContext;
 import javax.transaction.UserTransaction;
 
 import jp.co.nri.openapi.sample.common.ConstDef;
-import jp.co.nri.openapi.sample.persistence.Client;
+import jp.co.nri.openapi.sample.persistence.User;
 
 /**
- * クライアント編集View
- * テンプレート：<a href="../../../../../../templates/client_man_edit.txt">client_man_edit.xhtml</a>
+ * ユーザ編集View
+ * テンプレート：<a href="../../../../../../templates/user_man_edit.txt">user_man_edit.xhtml</a>
  */
 @ManagedBean
-public class ClientManEditBean {
+public class UserManEditBean {
 
 	@Resource
 	UserTransaction ut;
@@ -25,41 +25,43 @@ public class ClientManEditBean {
 	@PersistenceContext
 	EntityManager em;
 
-	private Client data = new Client();
+	private User data = new User();
 	
 	/**
-	 * @param data 編集対象クライアント
+	 * @return	編集対象USER
 	 */
-	public void setData(Client data) {
-		this.data = data;
-	}
-
-	/**
-	 * @return	編集対象クライアント
-	 */
-	public Client getData() {
+	public User getData() {
 		return data;
 	}
 
 	/**
-	 * 画面構成する前の処理。データを設定する。
-	 * @param event	イベント
+	 * @param data	編集対象USER
+	 */
+	public void setData(User data) {
+		this.data = data;
+	}
+
+	/**
+	 * 編集対象のユーザデータを初期化。
+	 * 
+	 * その後JSFによって、更新される。
+	 * @param event
 	 * @throws AbortProcessingException
 	 */
 	public void preRenderView(ComponentSystemEvent event) throws AbortProcessingException {
 		Long id = (Long) FacesContext.getCurrentInstance().getExternalContext().getSessionMap()
-				.get(ConstDef.SK_CLIENT_ID);
-		System.out.println(String.format("preRenderView(%s)", event.toString()));
+				.get(ConstDef.SK_USER_ID);
+		System.out.println(String.format("preRenderView(%d)", id));
 
 		if (null == id) {
-			this.data = new Client();
+			this.data = new User();
 		} else {
-			this.data = em.find(Client.class, id);
+			this.data = em.find(User.class, id);
 		}
 	}
 
 	/**
-	 * 更新ボタンを押下した場合の処理、入力データを保存する。
+	 * 更新ボタンが押下され、入力データをDBに保存する。
 	 * @return	遷移先
 	 * @throws Exception
 	 */
@@ -67,7 +69,8 @@ public class ClientManEditBean {
 		ut.begin();
 
 		try {
-			Client d = em.merge(data);
+
+			User d = em.merge(data);
 
 			em.persist(d);
 
@@ -76,12 +79,11 @@ public class ClientManEditBean {
 			ut.rollback();
 		}
 
-		return "client_man";
+		return "user_man";
 	}
 
 	/**
-	 * 追加ボタンを押下した場合の処理、入力データの保存。
-	 * 
+	 * 追加ボタンが押下され、入力データをDBに保存する。
 	 * @return	遷移先
 	 * @throws Exception
 	 */
@@ -96,6 +98,6 @@ public class ClientManEditBean {
 		} catch (Exception e) {
 			ut.rollback();
 		}
-		return "client_man";
+		return "user_man";
 	}
 }

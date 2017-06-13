@@ -18,4 +18,9 @@ public final class ConstDef {
 	 * サービス（API）IDを格納するセッションキー
 	 */
 	public static final String SK_SERVICE_ID = "SK_SERVICE_ID";
+	
+	/**
+	 * Nonceを格納するセッションキー
+	 */
+	public static final String SK_NONCE_VALUE = "SK_NONCE_VALUE";
 }

@@ -1,23 +1,23 @@
-package jp.co.nri.openapi.sample.faces;
+package jp.co.nri.openapi.sample.manager;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.faces.bean.ManagedBean;
 import javax.faces.context.FacesContext;
-import javax.faces.event.AbortProcessingException;
-import javax.faces.event.ComponentSystemEvent;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.transaction.UserTransaction;
 
 import jp.co.nri.openapi.sample.common.ConstDef;
-import jp.co.nri.openapi.sample.persistence.User;
+import jp.co.nri.openapi.sample.persistence.Client;
+import jp.co.nri.openapi.sample.persistence.Service;
 
 /**
- * ユーザ編集View
- * テンプレート：<a href="../../../../../../templates/user_man_edit.txt">user_man_edit.xhtml</a>
+ * サービス編集View
+ * テンプレート：<a href="../../../../../../templates/service_man_edit.txt">service_man_edit.xhtml</a>
  */
 @ManagedBean
-public class UserManEditBean {
+public class ServiceManEditBean {
 
 	@Resource
 	UserTransaction ut;
@@ -25,38 +25,36 @@ public class UserManEditBean {
 	@PersistenceContext
 	EntityManager em;
 
-	private User data = new User();
+	private Service data = new Service();
 	
 	/**
-	 * @return	編集対象USER
+	 * @return	編集データ
 	 */
-	public User getData() {
+	public Service getData() {
 		return data;
 	}
 
 	/**
-	 * @param data	編集対象USER
+	 * @param data	編集データ
 	 */
-	public void setData(User data) {
+	public void setData(Service data) {
 		this.data = data;
 	}
 
 	/**
-	 * 編集対象のユーザデータを初期化。
-	 * 
-	 * その後JSFによって、更新される。
-	 * @param event
-	 * @throws AbortProcessingException
+	 * データの初期値を設定する。
+	 * その後、JSFフレームによって、いろいろ同期が入る。
 	 */
-	public void preRenderView(ComponentSystemEvent event) throws AbortProcessingException {
+	@PostConstruct
+	public void preRenderView() {
 		Long id = (Long) FacesContext.getCurrentInstance().getExternalContext().getSessionMap()
-				.get(ConstDef.SK_USER_ID);
+				.get(ConstDef.SK_SERVICE_ID);
 		System.out.println(String.format("preRenderView(%d)", id));
 
 		if (null == id) {
-			this.data = new User();
+			this.data = new Service();
 		} else {
-			this.data = em.find(User.class, id);
+			this.data = em.find(Service.class, id);
 		}
 	}
 
@@ -70,7 +68,7 @@ public class UserManEditBean {
 
 		try {
 
-			User d = em.merge(data);
+			Service d = em.merge(data);
 
 			em.persist(d);
 
@@ -79,18 +77,24 @@ public class UserManEditBean {
 			ut.rollback();
 		}
 
-		return "user_man";
+		return "service_man";
 	}
 
 	/**
 	 * 追加ボタンが押下され、入力データをDBに保存する。
+	 * 
 	 * @return	遷移先
 	 * @throws Exception
 	 */
 	public String append() throws Exception {
 		ut.begin();
-
+		
 		try {
+			long clientId = (Long)FacesContext.getCurrentInstance().getExternalContext().getSessionMap().get(ConstDef.SK_CLIENT_ID);
+			
+			Client client = em.find(Client.class, clientId);
+			
+			data.setClient(client);
 
 			em.persist(data);
 
@@ -98,6 +102,6 @@ public class UserManEditBean {
 		} catch (Exception e) {
 			ut.rollback();
 		}
-		return "user_man";
+		return "service_man";
 	}
 }

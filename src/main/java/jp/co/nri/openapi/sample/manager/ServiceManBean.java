@@ -1,4 +1,4 @@
-package jp.co.nri.openapi.sample.faces;
+package jp.co.nri.openapi.sample.manager;
 
 import java.util.List;
 import java.util.Map;

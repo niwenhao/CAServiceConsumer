@@ -1,4 +1,4 @@
-package jp.co.nri.openapi.sample.faces;
+package jp.co.nri.openapi.business;
 
 import java.io.IOError;
 import java.io.IOException;
@@ -15,6 +15,7 @@ import javax.faces.context.ResponseWriter;
 import javax.faces.event.ComponentSystemEvent;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.servlet.http.HttpSession;
 import javax.transaction.UserTransaction;
 
 import jp.co.nri.openapi.sample.common.ConstDef;
@@ -50,6 +51,14 @@ public class OrderListBean extends ServiceInvoker {
 	@Override
 	protected String getReturnURL() {
 		return FacesContext.getCurrentInstance().getExternalContext().getApplicationContextPath() + "/order_list.jsf";
+	}
+
+	/* (non-Javadoc)
+	 * @see jp.co.nri.openapi.sample.common.ServiceInvoker#getSession()
+	 */
+	@Override
+	protected HttpSession getSession() {
+		return (HttpSession)FacesContext.getCurrentInstance().getExternalContext().getSession(true);
 	}
 	
 	/**

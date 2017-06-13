@@ -16,6 +16,7 @@ import java.util.Map;
 import javax.annotation.Resource;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.servlet.http.HttpSession;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
@@ -43,7 +44,7 @@ import jp.co.nri.openapi.sample.persistence.User;
  * @author nwh
  *
  */
-public abstract class ServiceInvoker implements JsonHelper {
+public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 
 	/**
 	 * Token取得完了後、APPに戻るURLを保持するStateキー
@@ -214,7 +215,8 @@ public abstract class ServiceInvoker implements JsonHelper {
 		OAuthRedirectException re = new OAuthRedirectException();
 		re.authorizeUrl = this.client.getAuthorizeUrl();
 		re.clientId = this.client.getIdent();
-		re.nonce = "xxx";
+		re.nonce = uuidGen();
+		this.getSession().setAttribute(ConstDef.SK_NONCE_VALUE, re.nonce);
 		re.requestUri = this.client.getRequestUrl();
 		re.scope = this.client.getScope();
 		Map<String, Object> state = new HashMap<>();
@@ -391,7 +393,7 @@ public abstract class ServiceInvoker implements JsonHelper {
 		}
 		return null;
 	}
-
+	
 	/**
 	 * このサービスを利用するAPPからユーザIDを取得する。
 	 * 
@@ -413,4 +415,9 @@ public abstract class ServiceInvoker implements JsonHelper {
 	 */
 	protected abstract String getReturnURL();
 
+	/**
+	 * Nonce情報を持久保存するため、セッションを取得する。
+	 * @return  セッションオブジェクト
+	 */
+	protected abstract HttpSession getSession();
 }

@@ -21,8 +21,10 @@ dependencies {
 	compileOnly group: 'javax.transaction', name: 'jta', version: '1.1'
 	compileOnly group: 'org.hibernate.javax.persistence', name: 'hibernate-jpa-2.1-api', version: '1.0.0.Final'
 	compileOnly group: 'javax.json', name: 'javax.json-api', version: '1.1'
+	compileOnly group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
 	compile group: 'commons-codec', name: 'commons-codec', version: '1.10'
 	compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.3'
+	compile 'io.jsonwebtoken:jjwt:0.7.0'
     testCompile 'junit:junit:4.12'
 }
 
