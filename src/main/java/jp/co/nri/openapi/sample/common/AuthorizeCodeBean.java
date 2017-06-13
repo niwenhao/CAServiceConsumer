@@ -57,56 +57,6 @@ public class AuthorizeCodeBean implements JsonHelper, OpenIdHelper, CommonFuncti
 
 	List<String[]> followParams;
 	
-	private static byte[] authServerCert = null;
-	
-	public static synchronized byte[] getAuthServerCert() {
-		if (authServerCert!= null) {
-			return authServerCert;
-		}
-		
-		FileReader fileReader = null;
-		BufferedReader reader = null;
-		
-		StringBuilder sb;
-		try {
-			fileReader = new FileReader(System.getProperty("openapi.cert_path"));
-			reader = new BufferedReader(fileReader);
-			
-			boolean keyStarted = false;
-			
-			sb = new StringBuilder();
-			
-			String line = null;
-			while((line = reader.readLine()) != null) {
-				if (line.startsWith("-----BEGIN CERTIFICATE-----")) {
-					keyStarted = true;
-					continue;
-				}
-				if (line.startsWith("-----END CERTIFICATE-----")) {
-					keyStarted = true;
-					continue;
-				}
-				if (keyStarted) {
-					sb.append(line);
-				}
-			}
-		} catch(IOException e) {
-			throw new RuntimeException(e);
-		} finally {
-			if (fileReader != null) {
-				try {
-				fileReader.close();
-				} catch(IOException e) {
-					throw new RuntimeException(e);
-				}
-			}
-		}
-		
-		authServerCert = Base64.getDecoder().decode(sb.toString());
-		
-		return authServerCert;
-	}
-
 	/**
 	 * 認証コードとステータスでトークンを取得し、DBに保存する。
 	 * 
@@ -166,7 +116,15 @@ public class AuthorizeCodeBean implements JsonHelper, OpenIdHelper, CommonFuncti
 			Map<String, Object> rst = json2Map(duplicateInputStream(System.out, response.getEntity().getContent()));
 			
 			String idToken = (String)rst.get("id_token");
-			Claims claims = this.parseIdToken(AuthorizeCodeBean.getAuthServerCert(), idToken);
+			Claims claims = this.parseIdToken(client.getSecret().getBytes("UTF-8"), idToken);
+			String o;
+			String c;
+			
+			o = base64UrlHelfSha256(this.authCode);
+			c = (String)claims.get("c_hash");
+			if (!o.equals(c)) {
+				throw new RuntimeException(String.format("authcode validation failed. o=%s, c=%s", o, c));
+			}
 			
 			
 			Token token = new Token();
