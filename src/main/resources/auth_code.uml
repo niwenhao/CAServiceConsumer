@@ -1,0 +1,33 @@
+@startuml
+!include skinset.uml
+
+title
+AuthorizeCodeBeanのシーケンス
+
+※本シーケンスは認可完了になって、APPに戻るの際、サンプルAPPの動きを示す。
+end title
+
+actor "利用者" as user
+participant "Jboss/JSF" as mid
+participant "AuthorizeCodeBean" as ac
+participant "認可エンドポイント" as aep
+participant "トークンエンドポイント" as tep
+participant "サービスエンドポイント" as sep
+
+user -> aep : 認可処理
+activate aep
+user <-- aep : 画面遷移指示
+deactivate aep
+user -> mid : 認可結果連携
+activate mid
+note right user #lightblue
+OAuthの仕様で下記のパラメータがGETで渡される。
+# code  : 認証コード
+# state : 引き継ぎデータ
+
+※引き継ぎデータ(state)について、サンプル実装では
+end note
+user <-- mid :
+deactivate mid
+
+@enduml

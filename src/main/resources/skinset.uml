@@ -1,0 +1,19 @@
+skinparam roundcorner 20
+skinparam handwritten false
+skinparam NoteBackgroundColor White
+'skinparam note {
+'    BackgroundColor White
+'    BorderColor Black
+'}
+'skinparam activity {
+'    ArrowColor Black
+'    BorderColor Black
+'}
+'skinparam sequence {
+'    ParticipantBackgroundColor White
+'    ParticipantFontColor Black
+'    ParticipantBorderColor Black
+'    LifeLineBorderColor Black
+'    ActorBackgroundColor White
+'    ActorFontColor Black
+'}

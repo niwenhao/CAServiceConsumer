@@ -1,0 +1,175 @@
+@startuml
+!include skinset.uml
+
+title OrderListBeanのシーケンス
+
+actor "利用者" as user
+participant "Jboss/JSF" as mid
+participant "OrderListBean" as ol
+participant "ServiceInvoker" as si
+participant "認可エンドポイント" as aep
+participant "トークンエンドポイント" as tep
+participant "サービスエンドポイント" as sep
+
+user -> mid : 注文一覧参照
+	activate mid
+    mid -> ol : searchOrderList()
+    activate ol
+    note over mid
+    注文一覧を検索する
+    本サンプルでは当該APIの初回登録時も当該APIを呼び出すクラスを利用しています。
+    end note
+        ol -> si : invokeService(サービス名, 入力データ)
+        activate si
+        note over si
+        サービス名はServiceテーブルのname項目にマッチするデータ。
+        入力データは呼び出すAPIによって決める。
+        ※注文一覧の場合、検索条件に当たる。
+        end note
+        	si -> si : checkToken(サービス名):トークンをチェックする。
+			activate si
+				si -> ol : getUserId()
+				activate ol
+				note over ol : 本サンプルではセッション情報からユーザIDを取得する。
+				si <-- ol : ユーザID
+				deactivate ol
+				note over si
+				本サンプルではDBから下記のロジックでService、Client、User、Tokenを取得する。
+				# Serviceテーブルからサービス名でServiceエンティティを取得する。
+				# Serviceのclient_idでClientテーブルからClientエンティティを取得する。
+				# UserテーブルからユーザIDでUserエンティティを取得する。
+				# ユーザIDとServiceのIDでTokenテーブルからTokenエンティティを取得する。
+				end note
+				note over si
+				トークンが存在しない：チェック結果<-NOT_EXIST
+				トークンが期限切れ：チェック結果<-EXPIRED
+				その他：チェック結果<-GRANTED
+				end note
+			si <-- si : チェック結果
+        	deactivate si
+        	opt トークンチェック結果がNOT_EXIST
+				si -> si : rediretToTokenRequire()
+				activate si
+					si -> ol : getReturnURL()
+					activate ol
+					si <-- ol : 業務URL
+					deactivate ol 
+					si -> ol : getAppParameters()
+					activate ol
+					si <-- ol : 引き継ぎパラメータ
+					deactivate ol 
+					si -> OpenIdHelper : randomGen()
+					activate OpenIdHelper
+					si <-- OpenIdHelper : ランダム値
+					deactivate OpenIdHelper
+					si -> ol : getSession()
+					activate ol
+					note over ol : サンプル実装ではJSFAPI通して、HttpSessionを取得する。
+					si <-- ol : セッションオブジェクト
+					deactivate ol
+					note over si #lightblue
+					ランダム値を何らかの形で保存する。
+					サンプル実装の場合、セッションに格納した。
+					end note
+					create OAuthRedirectException
+					si -> OAuthRedirectException : 初期値設定
+					activate OAuthRedirectException
+					note over OAuthRedirectException #lightblue
+					※ここで設定したデータが認可エンドポイントに渡される。
+					※サンプルでは下記のような値を取得しています。
+					認証エンドポイントURL <- Clientテーブル.authorizeUrl 認可エンドポイント
+					クライアントID　<- Clientテーブル.Ident ※クライアントID
+					nonce <- ランダム値
+					requestUri <- Clientテーブル.requestUrl ※Callback URL
+					scope <- Clientテーブル.scope
+					state <- {
+					　　RETURN_URL : 業務URL
+					　　FOLLOW_PARAMETERS : 引き継ぎパラメータ
+					　　CLIENT_ID : Clientテーブル.Ident ※クライアントID
+					　　USER_ID : ユーザID
+					}
+					end note
+					si <-- OAuthRedirectException
+					deactivate OAuthRedirectException
+					si -> ol : throw OAuthRedirectException
+					activate ol
+						ol -> OAuthRedirectException : transRedirectUrl()
+						activate OAuthRedirectException
+						ol <-- OAuthRedirectException : 遷移先URL
+						deactivate OAuthRedirectException
+						ol -> user : 遷移先URLに遷移する（302）
+					si <-- ol
+					deactivate ol
+				si <-- si
+				deactivate si
+			else トークンが期限切れ
+				si -> si : refreshToken
+				activate si
+					note over si : DBからclient、tokenの最新値を取得する。
+					si -> OpenIdHelper : takeRefreshToken(client, token)
+					activate OpenIdHelper
+						note over OpenIdHelper #lightblue
+						※期限が切れた場合、OAuthの仕様の通り、下記のデータを準備する。
+						grant_type : refresh_token
+						refresh_token : token.refreshToken
+						scope : client.scope
+						client_id : client.ident
+						client_secret : client.secret
+						end note
+						OpenIdHelper -> tep : HTTPでJSON送信
+						activate tep
+						note over tep : APIGWの実装でトークン管理を実施する。
+						OpenIdHelper <-- tep : Token情報(JSON)
+						deactivate tep
+						OpenIdHelper -> JsonHelper : json2Map(Token情報(JSON))
+						activate JsonHelper
+							note over JsonHelper : Token情報(JSON)をMapオブジェクトに変換する。
+						OpenIdHelper <-- JsonHelper : Token情報
+						deactivate JsonHelper
+					si <-- OpenIdHelper : Token情報
+					deactivate OpenIdHelper
+					
+					note over si : 戻ったToken情報でTokenテーブルを更新する。
+				si <-- si :
+				deactivate si
+				note over si #lightred : 次の「トークンが正常」の処理に継続する。
+			else トークンが正常
+				si -> si : httpCall(入力データ)
+				activate si
+					si -> JsonHelper : map2Json(入力データ)
+					activate JsonHelper
+					note over JsonHelper : 入力データをJSONテキストに変換する。
+					si <-- JsonHelper : JSON
+					deactivate JsonHelper
+					si -> sep : サービスを呼び出す
+					activate sep
+					note over si #lightblue
+					# HTTP通信を行う
+					# 接続先URL : Serviceテーブル.url
+					# ポストデータ：map2Jsonの戻り値
+					# Authorization(ヘッダー) : bearer Tokenテーブル.accessToken
+					# Content-type(ヘッダー) : application/json
+					end note
+					si <-- sep : JSONサービス結果（サービスによって違う、サンプルの場合は注文一覧）
+					deactivate sep
+					si -> JsonHelper : json2Map(JSONサービス結果)
+					activate JsonHelper
+						note over JsonHelper : JSONサービス結果をMapオブジェクトに変換する。
+					si <-- JsonHelper : サービス結果
+					deactivate JsonHelper
+				si <-- si : サービス結果
+				deactivate si
+        ol <-- si : サービス結果
+        deactivate si
+        
+        ol -> ol : 画面編集(サービス結果)
+        activate ol
+        ol <-- ol : 画面データ
+        deactivate ol
+    mid <-- ol : 画面データ
+    deactivate ol
+user <-- mid : ページ
+deactivate mid
+        	end
+
+@enduml

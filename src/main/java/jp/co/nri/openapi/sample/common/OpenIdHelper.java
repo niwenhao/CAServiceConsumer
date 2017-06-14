@@ -1,19 +1,28 @@
 package jp.co.nri.openapi.sample.common;
 
-import java.beans.Beans;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.codec.digest.DigestUtils;
-
-import com.fasterxml.jackson.databind.util.BeanUtil;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import jp.co.nri.openapi.sample.persistence.Client;
+import jp.co.nri.openapi.sample.persistence.Token;
 
-public interface OpenIdHelper {
-	default String uuidGen() {
+public interface OpenIdHelper extends JsonHelper {
+	default String randomGen() {
 		return UUID.randomUUID().toString();
 	}
 	
@@ -30,4 +39,40 @@ public interface OpenIdHelper {
 		String rst = Base64.getEncoder().encodeToString(helfShaBuf);
 		return rst.replaceAll("\\+", "-").replaceAll("/", "_").replaceAll("=*$", "");
 	}
+
+	default Map<String, Object> takeRefreshToken(Client client, Token token)
+			throws Exception {
+		HttpClient httpClient = HttpClients.createDefault();
+
+		HttpPost post = new HttpPost(client.getTokenUrl());
+		// トークンを取得するためのパラメータを組み立て
+		List<NameValuePair> paramList = new ArrayList<>();
+		paramList.add(new BasicNameValuePair("grant_type", "refresh_token"));
+		paramList.add(new BasicNameValuePair("refresh_token", token.getRefreshToken()));
+		paramList.add(new BasicNameValuePair("scope", client.getScope()));
+		paramList.add(new BasicNameValuePair("client_id", client.getIdent()));
+		paramList.add(new BasicNameValuePair("client_secret", client.getSecret()));
+		post.setEntity(new UrlEncodedFormEntity(paramList));
+
+		// トークンエンドポイントにアクセス。
+		HttpResponse response = httpClient.execute(post);
+
+		// ステータスチェック
+		if (response.getStatusLine().getStatusCode() != 200) {
+			throw new RuntimeException(
+					"Status code: " + response.getStatusLine().getStatusCode() + "\n" + response.toString());
+		}
+
+		// コンテンツタイプチェック
+		if (response.getEntity().getContentType().getValue().replaceAll("^.*application/json.*$", "")
+				.length() != 0) {
+			throw new RuntimeException("Content-type: " + response.getEntity().getContentType().getValue() + "\n"
+					+ response.toString());
+		}
+
+		// トークン関連情報をDBに保存。
+		Map<String, Object> rst = json2Map(response.getEntity().getContent());
+		return rst;
+	}
+
 }

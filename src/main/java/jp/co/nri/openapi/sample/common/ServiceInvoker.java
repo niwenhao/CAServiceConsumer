@@ -22,6 +22,7 @@ import javax.transaction.UserTransaction;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
@@ -215,7 +216,7 @@ public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 		OAuthRedirectException re = new OAuthRedirectException();
 		re.authorizeUrl = this.client.getAuthorizeUrl();
 		re.clientId = this.client.getIdent();
-		re.nonce = uuidGen();
+		re.nonce = randomGen();
 		this.getSession().setAttribute(ConstDef.SK_NONCE_VALUE, re.nonce);
 		re.requestUri = this.client.getRequestUrl();
 		re.scope = this.client.getScope();
@@ -241,36 +242,7 @@ public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 			user = em.merge(user);
 			client = em.merge(client);
 
-			HttpClient httpClient = HttpClients.createDefault();
-
-			HttpPost post = new HttpPost(client.getTokenUrl());
-			// トークンを取得するためのパラメータを組み立て
-			List<NameValuePair> paramList = new ArrayList<>();
-			paramList.add(new BasicNameValuePair("grant_type", "refresh_token"));
-			paramList.add(new BasicNameValuePair("refresh_token", token.getRefreshToken()));
-			paramList.add(new BasicNameValuePair("scope", client.getScope()));
-			paramList.add(new BasicNameValuePair("client_id", client.getIdent()));
-			paramList.add(new BasicNameValuePair("client_secret", client.getSecret()));
-			post.setEntity(new UrlEncodedFormEntity(paramList));
-
-			// トークンエンドポイントにアクセス。
-			HttpResponse response = httpClient.execute(post);
-
-			// ステータスチェック
-			if (response.getStatusLine().getStatusCode() != 200) {
-				throw new RuntimeException(
-						"Status code: " + response.getStatusLine().getStatusCode() + "\n" + response.toString());
-			}
-
-			// コンテンツタイプチェック
-			if (response.getEntity().getContentType().getValue().replaceAll("^.*application/json.*$", "")
-					.length() != 0) {
-				throw new RuntimeException("Content-type: " + response.getEntity().getContentType().getValue() + "\n"
-						+ response.toString());
-			}
-
-			// トークン関連情報をDBに保存。
-			Map<String, Object> rst = json2Map(response.getEntity().getContent());
+			Map<String, Object> rst = takeRefreshToken(client, token);
 
 			token.setAccessToken((String) rst.get("access_token"));
 			token.setRefreshToken((String) rst.get("refresh_token"));
