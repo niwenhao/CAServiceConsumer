@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +25,7 @@ import javax.transaction.UserTransaction;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -63,7 +65,7 @@ public class AuthorizeCodeBean implements JsonHelper, OpenIdHelper, CommonFuncti
 	 * @throws Exception
 	 */
 	public void performTakeToken() throws Exception {
-		//ステータスをデーコードする
+		// ステータスをデーコードする
 		Map<String, Object> state = json2Map(
 				URLDecoder.decode(stateEncoded, StandardCharsets.UTF_8.name()).getBytes(StandardCharsets.UTF_8));
 		returnUrl = (String) state.get(ServiceInvoker.RETURN_URL);
@@ -75,62 +77,44 @@ public class AuthorizeCodeBean implements JsonHelper, OpenIdHelper, CommonFuncti
 
 		long userId = ((BigDecimal) state.get(ServiceInvoker.USER_ID)).longValue();
 		long clientId = ((BigDecimal) state.get(ServiceInvoker.CLIENT_ID)).longValue();
-		
-		String nonce = (String)FacesContext.getCurrentInstance().getExternalContext().getSessionMap().get(ConstDef.SK_NONCE_VALUE);
+
+		String nonce = (String) FacesContext.getCurrentInstance().getExternalContext().getSessionMap()
+				.get(ConstDef.SK_NONCE_VALUE);
 		try {
 			ut.begin();
-			//トークンと関連するデータを取得しておく
+			// トークンと関連するデータを取得しておく
 			User user = em.find(User.class, userId);
 			Client client = em.find(Client.class, clientId);
 
-			HttpClient httpClient = HttpClients.createDefault();
+			HttpResponse response = takeAccessToken(client.getAuthorizeUrl(), authCode, client.getRequestUrl(),
+					client.getIdent(), client.getSecret());
 
-			HttpPost post = new HttpPost(client.getTokenUrl());
-			//トークンを取得するためのパラメータを組み立て
-			List<NameValuePair> paramList = new ArrayList<>();
-			paramList.add(new BasicNameValuePair("grant_type", "authorization_code"));
-			paramList.add(new BasicNameValuePair("code", this.authCode));
-			paramList.add(new BasicNameValuePair("redirect_uri", client.getRequestUrl()));
-			paramList.add(new BasicNameValuePair("client_id", client.getIdent()));
-			paramList.add(new BasicNameValuePair("client_secret", client.getSecret()));
-			post.setEntity(new UrlEncodedFormEntity(paramList));
-
-			//トークンエンドポイントにアクセス。
-			HttpResponse response = httpClient.execute(post);
-
-			//ステータスチェック
-			if (response.getStatusLine().getStatusCode() != 200) {
-				throw new RuntimeException(
-						"Status code: " + response.getStatusLine().getStatusCode() + "\n" + response.toString());
-			}
-
-			//コンテンツタイプチェック
-			if (response.getEntity().getContentType().getValue().replaceAll("^.*application/json.*$", "")
-					.length() != 0) {
-				throw new RuntimeException("Content-type: " + response.getEntity().getContentType().getValue() + "\n"
-						+ response.toString());
-			}
-			
-
-			//トークン関連情報をDBに保存。
+			// トークン関連情報をDBに保存。
 			Map<String, Object> rst = json2Map(duplicateInputStream(System.out, response.getEntity().getContent()));
-			
-			String idToken = (String)rst.get("id_token");
+
+			String idToken = (String) rst.get("id_token");
 			Claims claims = this.parseIdToken(client.getSecret().getBytes("UTF-8"), idToken);
 			String o;
 			String c;
 			
+			o = nonce;
+			c = (String) claims.get("nonce");
+			if (!o.equals(c)) {
+				throw new RuntimeException(String.format("nonce validation failed. o=%s, c=%s", o, c));
+			}
+
+
 			o = base64UrlHelfSha256(this.authCode);
-			c = (String)claims.get("c_hash");
+			c = (String) claims.get("c_hash");
 			if (!o.equals(c)) {
 				throw new RuntimeException(String.format("authcode validation failed. o=%s, c=%s", o, c));
 			}
-			
-			
+
 			Token token = new Token();
 			token.setAccessToken((String) rst.get("access_token"));
 			token.setRefreshToken((String) rst.get("refresh_token"));
-			token.setTimeLimit(new Date(System.currentTimeMillis() + ((BigDecimal) rst.get("expires_in")).longValue()*1000));
+			token.setTimeLimit(
+					new Date(System.currentTimeMillis() + ((BigDecimal) rst.get("expires_in")).longValue() * 1000));
 
 			token.setUser(user);
 			token.setClient(client);
@@ -143,6 +127,7 @@ public class AuthorizeCodeBean implements JsonHelper, OpenIdHelper, CommonFuncti
 			throw new RuntimeException(e);
 		}
 	}
+
 
 	/**
 	 * @return	認証コード（パラメータ受け取り用）

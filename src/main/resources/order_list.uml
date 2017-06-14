@@ -85,7 +85,7 @@ user -> mid : 注文一覧参照
 					state <- {
 					　　RETURN_URL : 業務URL
 					　　FOLLOW_PARAMETERS : 引き継ぎパラメータ
-					　　CLIENT_ID : Clientテーブル.Ident ※クライアントID
+					　　CLIENT_ID : Clientテーブル.ID
 					　　USER_ID : ユーザID
 					}
 					end note
