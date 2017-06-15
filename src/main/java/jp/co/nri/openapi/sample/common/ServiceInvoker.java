@@ -40,13 +40,14 @@ import jp.co.nri.openapi.sample.persistence.Token;
 import jp.co.nri.openapi.sample.persistence.User;
 
 /**
- * Oauth認証、遷移機能を提供するヘルパー
+ * 本クラスはこのクラスを継承したクラスにAPI呼び出す処理を提供する。
+ * <p>
+ * 本クラスの#invokeServiceメソッドを呼びだされた際、継承クラスから必要な情報を取得し、OAuth認証が必要かを判断する。<br>
+ * 必要な場合、認可エンドポイントにアクセスするためのデータを組み立って、例外の形で継承クラスに渡し、継承クラスは適当なミドル機能
+ * を利用して、認可エンドポイントに遷移する。
+ * </p>
  */
-/**
- * @author nwh
- *
- */
-public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
+public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper, CommonFunction {
 
 	/**
 	 * Token取得完了後、APPに戻るURLを保持するStateキー
@@ -177,7 +178,7 @@ public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 	private EntityManager em;
 
 	/**
-	 * トークン状態チェック
+	 * ローカルDBに管理されるトークン状態チェック
 	 * 
 	 * @param name
 	 *            呼び出しサービスの名称。
@@ -210,9 +211,9 @@ public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 	}
 
 	/**
-	 * 認証ポイントに遷移するデータ準備。
+	 * 認可エンドポイントに遷移するデータ準備。
 	 * 
-	 * 最後にOAuthRedirectExceptionをスルーして、APPが遷移してもらう。
+	 * 最後にOAuthRedirectExceptionをスローして、APPが遷移してもらう。
 	 * 
 	 * @throws OAuthRedirectException
 	 */
@@ -248,7 +249,7 @@ public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 			user = em.merge(user);
 			client = em.merge(client);
 
-			Map<String, Object> rst = takeRefreshToken(client, token);
+			Map<String, Object> rst = takeRefreshToken(client.getTokenUrl(), client.getIdent(), client.getSecret(), client.getScope(), token.getRefreshToken());
 
 			token.setAccessToken((String) rst.get("access_token"));
 			token.setRefreshToken((String) rst.get("refresh_token"));
@@ -268,9 +269,8 @@ public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 				ut.rollback();
 			} catch (Exception e1) {
 				throw new RuntimeException(e1);
-			} finally {
-				throw new RuntimeException(e);
 			}
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -325,30 +325,6 @@ public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 	}
 
 	/**
-	 * 入力ストリームから内容をバッファに入れる。
-	 * 
-	 * @param stream
-	 *            入力ストレーム
-	 * @return バッファ
-	 */
-	private byte[] dumpStream(InputStream stream) {
-		try {
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			int len;
-			byte[] buf = new byte[1024];
-
-			while ((len = stream.read(buf)) > 0) {
-				bos.write(buf, 0, len);
-			}
-
-			bos.close();
-			return bos.toByteArray();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	/**
 	 * 外部に対して、サービスを呼び出す機能を提供する。
 	 * 
 	 * @param name
@@ -380,21 +356,25 @@ public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 	protected abstract long getUserId();
 
 	/**
-	 * 外部認証が必要な場合、戻すとき、APPに送るバラメータ一覧を取得する。
+	 * 外部認証が必要な場合、バラメータ一覧を取得する。
+	 * APIGWからAPPにリダイレクトされる際、このデータをAPPに渡す。
 	 * 
 	 * @return パラメータ一覧。
 	 */
 	protected abstract Map<String, String> getAppParameters();
 
 	/**
-	 * 外部認証が必要な場合、戻すときのURL
+	 * 外部認証が必要な場合、戻るべきURL。
+	 * APIGWからAPPにリダイレクトされる際、このURLに更に振り分ける。
 	 * 
 	 * @return URL
 	 */
 	protected abstract String getReturnURL();
 
 	/**
-	 * Nonce情報を持久保存するため、セッションを取得する。
+	 * 外部認証が必要な場合、Nonceなどの情報を保持するセッションを取得する。
+	 * APIGWからAPPにリダイレクトされる際、セッションからチェック処理用情報を取得する。
+	 * 
 	 * @return  セッションオブジェクト
 	 */
 	protected abstract HttpSession getSession();

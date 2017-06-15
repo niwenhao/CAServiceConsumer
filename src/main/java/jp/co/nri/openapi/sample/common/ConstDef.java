@@ -30,7 +30,7 @@ public final class ConstDef {
 	public static final String SK_STATE_VALUE = "SK_STATE_VALUE";
 
 	/**
-	 * 引き継ぎ情報を格納するセッションキー
+	 * APPからAPIGWに行ったり、来たりする際、引き継ぎ情報を格納するセッションキー
 	 */
 	public static final String SK_FORWARD_VALUE = "SK_FORWARD_VALUE";
 }

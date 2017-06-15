@@ -9,6 +9,7 @@ participant "OrderListBean" as ol
 participant "ServiceInvoker" as si
 participant "OpenIdHelper"
 participant "JsonHelper"
+participant "OAuthRedirectException"
 control "認可エンドポイント" as aep
 control "トークンエンドポイント" as tep
 control "サービスエンドポイント" as sep
@@ -18,7 +19,7 @@ user -> mid : 注文一覧参照
     mid -> ol : searchOrderList()
     activate ol
     note over mid
-    注文一覧を検索する
+    注文一覧を検索する。
     本サンプルでは当該APIの初回登録時も当該APIを呼び出すクラスを利用しています。
     end note
         ol -> si : invokeService(サービス名, 入力データ)
@@ -161,7 +162,7 @@ user -> mid : 注文一覧参照
                     si -> sep : サービスを呼び出す
                     activate sep
                     note over si #lightblue
-                    # HTTP通信を行う
+                    # HTTP通信を行う。
                     # 接続先URL : Serviceテーブル.url
                     # ポストデータ：map2Jsonの戻り値
                     # Authorization(ヘッダー) : bearer Tokenテーブル.accessToken

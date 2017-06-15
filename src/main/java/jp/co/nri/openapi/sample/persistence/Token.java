@@ -11,20 +11,24 @@ import javax.persistence.*;
 					+ "Token t join t.client c join c.services s "
 					+ "where t.user.id = :user_id and s.name = :name")
 })
+@Table(name = "token")
 public class Token {
 	
 	public static final String FIND_ALL_BY_USERID_AND_SERVICE_NAME = "90bbdc87-21f4-44c4-82a0-6936b30b77bc";
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
+	@Column(name = "token_id")
 	private long id;
 	private String accessToken;
 	private String refreshToken;
 	private Date timeLimit;
 	
 	@ManyToOne
+	@JoinColumn(name = "user_master_id")
 	private User user;
 	
 	@ManyToOne
+	@JoinColumn(name = "api_master_id")
 	private Client client;
 
 	/**

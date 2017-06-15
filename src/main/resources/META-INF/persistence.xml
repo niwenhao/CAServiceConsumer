@@ -4,8 +4,9 @@
         <description>To persist CA service client service DB</description>
         <jta-data-source>java:jboss/datasources/CAServiceConsume</jta-data-source>
         <properties>
-        	<!-- property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/ -->
         	<property name="javax.persistence.schema-generation.database.action" value="none"/>
+        	<!-- property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/ -->
+        	<!-- property name="javax.persistence.schema-generation.database.action" value="none"/ -->
         	<property name="javax.persistence.schema-generation.create-source" value="metadata"/>
         	<property name="javax.persistence.schema-generation.drop-source" value="metadata"/>
         </properties>

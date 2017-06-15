@@ -22,6 +22,7 @@
 					<td>********</td>
 					<td><h:commandButton
 							action="#{userManBean.reset_token(user.id)}" value="トークンクリア" />&nbsp;<h:commandButton
+							action="#{userManBean.expire_token(user.id)}" value="トークン期限切る" />&nbsp;<h:commandButton
 							action="#{userManBean.update(user.id)}" value="更新" />&nbsp;<h:commandButton
 							action="#{userManBean.delete(user.id)}" value="削除" /></td>
 				</tr>

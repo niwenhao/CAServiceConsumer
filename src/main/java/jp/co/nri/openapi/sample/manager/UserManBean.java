@@ -1,5 +1,6 @@
 package jp.co.nri.openapi.sample.manager;
 
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +72,28 @@ public class UserManBean {
 		ut.commit();
 
 		return null;
+	}
+	
+	public String expire_token(long id) {
+		try {
+			ut.begin();
+			
+			User u = em.find(User.class, id);
+			u.getTokens().forEach((t) -> {
+				t.setTimeLimit(new Date(System.currentTimeMillis()));
+				em.persist(t);
+			});
+			
+			ut.commit();
+			return null;
+		} catch (Exception e) {
+			try {
+				ut.rollback();
+			} catch (Exception e1) {
+				throw new RuntimeException(e1);
+			}
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**

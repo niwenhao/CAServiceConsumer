@@ -1,12 +1,15 @@
 package jp.co.nri.openapi.sample.persistence;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.Table;
 
 /**
  * @author nwh
@@ -22,12 +25,14 @@ import javax.persistence.NamedQuery;
 			query = "select s from Service s where s.name = :name"
 			)
 })
+@Table(name = "service_master")
 public class Service {
 	public static final String FIND_BY_CLIENT_ID = "92223f85-4481-4550-93d3-2d25a3d36418";
 	public static final String FIND_BY_NAME = "c21c2a1c-46a9-44d2-9079-b0a3006d7049";
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name="service_master_id")
 	private long id;
 	
 	private String name;
@@ -37,8 +42,9 @@ public class Service {
 	private String scope;
 
 	@ManyToOne
+	@JoinColumn(name = "api_master_id")
 	private Client client;
-
+	
 	/**
 	 * @return クライアント識別子
 	 */
@@ -68,14 +74,14 @@ public class Service {
 	}
 
 	/**
-	 * @return 	サービスが必要なスコップ
+	 * @return 	サービスが必要なスコープ
 	 */
 	public String getScope() {
 		return scope;
 	}
 
 	/**
-	 * @param scope 	サービスが必要なスコップ
+	 * @param scope 	サービスが必要なスコープ
 	 */
 	public void setScope(String scope) {
 		this.scope = scope;

@@ -1,6 +1,7 @@
 package jp.co.nri.openapi.sample.common;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -22,7 +23,13 @@ import jp.co.nri.openapi.sample.persistence.Token;
 import jp.co.nri.openapi.sample.persistence.User;
 
 /**
- * 認証コードを受け取って、TOKEN取得処理View。
+ * <b>このビューのURLはAPIGWのリダイレクトURLとして登録される。</b>
+ * <p>
+ * リクエストが来る際、パタメータで認可コードとステートが渡されることを想定する。
+ * このビーンはAPIGWのトークンエンドポイントにアクセス、トークンを新規取得する。
+ * 最後に本来認可要求した画面のURLに自動遷移する。
+ * </p>
+ * 
  * テンプレート：<a href="../../../../../../templates/authorize_code.txt">authorize_code.xhtml</a>
  */
 @ManagedBean
@@ -42,7 +49,7 @@ public class AuthorizeCodeBean implements JsonHelper, OpenIdHelper, CommonFuncti
 	List<String[]> followParams;
 	
 	/**
-	 * 認証コードとステータスでトークンを取得し、DBに保存する。
+	 * メイン処理。
 	 * 
 	 * @throws Exception
 	 */
@@ -73,14 +80,12 @@ public class AuthorizeCodeBean implements JsonHelper, OpenIdHelper, CommonFuncti
 			User user = em.find(User.class, userId);
 			Client client = em.find(Client.class, clientId);
 
-			HttpResponse response = takeAccessToken(client.getTokenUrl(), authCode, client.getRequestUrl(),
+			Map<String, Object> rst = takeAccessToken(client.getTokenUrl(), authCode, client.getRequestUrl(),
 					client.getIdent(), client.getSecret());
 
 			// トークン関連情報をDBに保存。
-			Map<String, Object> rst = json2Map(duplicateInputStream(System.out, response.getEntity().getContent()));
-
 			String idToken = (String) rst.get("id_token");
-			Claims claims = this.parseIdToken(client.getSecret().getBytes("UTF-8"), idToken);
+			Map<String, Object> claims = this.parseIdToken(client.getSecret().getBytes("UTF-8"), idToken);
 			String o;
 			String c;
 			
@@ -117,14 +122,14 @@ public class AuthorizeCodeBean implements JsonHelper, OpenIdHelper, CommonFuncti
 
 
 	/**
-	 * @return	認証コード（パラメータ受け取り用）
+	 * @return	認可コード（パラメータ受け取り用）
 	 */
 	public String getAuthCode() {
 		return authCode;
 	}
 
 	/**
-	 * @param authCode	認証コード（パラメータ受け取り用）
+	 * @param authCode	認可コード（パラメータ受け取り用）
 	 */
 	public void setAuthCode(String authCode) {
 		this.authCode = authCode;

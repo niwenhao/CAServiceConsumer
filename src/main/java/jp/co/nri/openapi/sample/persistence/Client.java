@@ -7,17 +7,20 @@ import javax.persistence.*;
  * OAuthクライアントのマッピングを定義する。
  */
 @Entity
+@Table(name = "api_master")
 public class Client {
 	/**
 	 * Object ID
 	 */
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
+	@Column(name = "api_master_id")
 	private long id;
 	
 	/**
 	 * クライアント識別子
 	 */
+	@Column(name = "identify")
 	private String ident;
 
 	/**
@@ -26,23 +29,26 @@ public class Client {
 	private String secret;
 	
 	/**
-	 * スコップ
+	 * スコープ
 	 */
 	private String scope;
 	
 	/**
 	 * このクライアントを認証するためのエンドポイント
 	 */
+	@Column(name = "authorize_url")
 	private String authorizeUrl;
 	
 	/**
 	 * トークンを取得するためのエンドポイント
 	 */
+	@Column(name = "token_url")
 	private String tokenUrl;
 	
 	/**
 	 * 認証コードを渡すURL 
 	 */
+	@Column(name = "request_url")
 	private String requestUrl;
 	
 	/**
@@ -94,14 +100,14 @@ public class Client {
 	}
 
 	/**
-	 * @return スコップ
+	 * @return スコープ
 	 */
 	public String getScope() {
 		return scope;
 	}
 
 	/**
-	 * @param scope スコップ
+	 * @param scope スコープ
 	 */
 	public void setScope(String scope) {
 		this.scope = scope;

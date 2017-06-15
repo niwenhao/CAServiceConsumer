@@ -13,7 +13,7 @@ import java.io.PrintStream;
  */
 public interface CommonFunction {
 	/**
-	 * inputを分岐し、新しいInputStreamオブジェクトを返す。読み込んだ内容をoutputにも出力する。<br/>
+	 * inputを分岐し、新しいInputStreamオブジェクトを返す。読み込んだ内容をoutputにも出力する。
 	 * 目的、InputStream内容を損失しないくログする。
 	 * 
 	 * @param output	出力するOutputStream
@@ -39,4 +39,29 @@ public interface CommonFunction {
 		
 		return rst;
 	}
+
+	/**
+	 * 入力ストリームから内容をバッファに入れる。
+	 * 
+	 * @param stream
+	 *            入力ストレーム
+	 * @return バッファ
+	 */
+	default byte[] dumpStream(InputStream stream) {
+		try {
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			int len;
+			byte[] buf = new byte[1024];
+
+			while ((len = stream.read(buf)) > 0) {
+				bos.write(buf, 0, len);
+			}
+
+			bos.close();
+			return bos.toByteArray();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 }

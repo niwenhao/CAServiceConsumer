@@ -3,6 +3,7 @@ package jp.co.nri.openapi.sample.persistence;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -10,6 +11,8 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
+
 
 @NamedQueries({ 
 	@NamedQuery(
@@ -20,12 +23,14 @@ import javax.persistence.OneToMany;
 			query = "select u from User u where u.name = :username and u.password = :password")
 	})
 @Entity
+@Table(name = "user_master")
 public class User {
 	public static final String LIST_ALL_USERS = "d2a43b45-5097-4151-8d64-cff09a143b17";
 	public static final String FIND_BY_USERNAME_AND_PASSWORD = "7a6b6be3-d9dc-495d-abb4-b22672b787ec";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name = "user_master_id")
 	private long id;
 
 	private String name;
