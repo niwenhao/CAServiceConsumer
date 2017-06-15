@@ -58,7 +58,8 @@ public class OrderListBean extends ServiceInvoker {
 	 */
 	@Override
 	protected HttpSession getSession() {
-		return (HttpSession)FacesContext.getCurrentInstance().getExternalContext().getSession(true);
+		HttpSession session = (HttpSession)FacesContext.getCurrentInstance().getExternalContext().getSession(true);
+		return session;
 	}
 	
 	/**

@@ -11,9 +11,11 @@ actor "利用者" as user
 participant "Jboss/JSF" as mid
 participant "AuthorizeCodeBean" as ac
 participant "OrderListBean" as ol
-participant "認可エンドポイント" as aep
-participant "トークンエンドポイント" as tep
-participant "サービスエンドポイント" as sep
+participant "OpenIdHelper"
+participant "JsonHelper"
+control "認可エンドポイント" as aep
+control "トークンエンドポイント" as tep
+control "サービスエンドポイント" as sep
 
 user -> aep : 認可処理
 activate aep
@@ -21,115 +23,120 @@ user <-- aep : 画面遷移指示
 deactivate aep
 user -> mid : 認可結果連携
 activate mid
-	note right user #lightblue
-	OAuthの仕様で下記のパラメータがGETで渡される。
-	# code  : 認証コード
-	# state : 引き継ぎデータ
+    note right user #lightblue
+    OAuthの仕様で下記のパラメータがGETで渡される。
+    # code  : 認可コード
+    # state : ステート
 
-	※引き継ぎデータ(state)について、サンプル実装では下記の情報を格納する。
-	RETURN_URL        : 業務URL、アクセストークンが取れたあと、このURLに遷移すべき。
-	FOLLOW_PARAMETERS : 引き継ぎパラメータ、業務URLに遷移するとき、パタメータをGETで渡す。
-	CLIENT_ID         : ClientテーブルのID
-	USER_ID           : UserテーブルのID
-	end note
-	mid -> ac
-	activate ac
-		ac -> ac : performTakeToken()
-		activate ac
-			note over ac : stateからJSON引き継ぎデータをデコードする。
-			ac -> JsonHelper : json2Map(JSON引き継ぎデータ)
-			activate JsonHelper
-				note over JsonHelper : JSON引き継ぎデータからMapに変換する。
-			ac <-- JsonHelper : 引き継ぎデータ
-			deactivate JsonHelper
-			note over ac : 引き継ぎデータ.FOLLOW_PARAMETERSをMapからパラメータListに変換する。
-			note over ac : 引き継ぎデータ.CLIENT_IDでClientテーブルからClientエンティティを取得する。
-			note over ac : 引き継ぎデータ.User_IDでUserテーブルからUserエンティティを取得する。
-			note over ac
-			HttpSessionからnonceを取得する。
-			※サンプル実装では、HttpSessionを利用するが、
-			　認可エンドポイントにリクエストに込んたnonceと同じものを取ればOK。
-			end note
-			
-			ac -> OpenIdHelper : takeAccessToken(引数)
-			activate OpenIdHelper
-				note over OpenIdHelper
-				引数は下記である。
-				tokenEndPointUrl : Client.authorizeUrl
-				authCode         : 認証コード
-				redirectUrl      : Client.requestUrl
-				clientId         : Client.ident
-				clientSecret     : Client.secret
-				end note
-				OpenIdHelper -> tep : HTTP通信でToken要求
-				activate tep
-					note over OpenIdHelper
-					送信先：tokenEndPointUrl
-					OAuthの仕様の通り、下記のデータを送信する。
-					grant_type     : authorization_code
-					code           : authCode
-					redirect_uri   : redirectUrl
-					client_id      : clientId
-					client_secret  : clientSecret
-					end note
-				OpenIdHelper <-- tep : JSONのToken情報
-				deactivate tep
-			ac <-- OpenIdHelper : JSONのToken情報
-			deactivate OpenIdHelper
+    セッションに下記のデータが置かれることを想定する。
+    SK_STATE_VALUE  :   認証リクエストのstate値。
+    SK_NONCE_VALUE  :   認証リクエストのnonce値。
+    SK_FORWARD_VALUE:   引き継ぎデータ
 
-			ac -> JsonHelper : json2Map(JSONのToken情報)
-			activate JsonHelper
-				note over JsonHelper : JSONをMapに変換する。
-			ac <-- JsonHelper : Token情報
-			deactivate JsonHelper
-			
-			ac -> OpenIdHelper : parseIdToken(署名鍵, JWT)
-			activate OpenIdHelper
-				note over ac
-				JWTをデコードし、署名を確認する。失敗の場合、RuntimeExceptionでAPPから抜き出す。
-				署名鍵   : Client.secret
-				JWT      : Token情報["id_token"]
-				end note
-			ac <-- OpenIdHelper : 
-			deactivate OpenIdHelper
-			
-			note over ac
-			JWTのnonceとHttpSessionのnonceを比較。違う場合、RuntimeExceptionでAPPから抜き出す。
-			end note
-			
-			ac -> OpenIdHelper : base64UrlHelfSha256(認証コード)
-			activate OpenIdHelper
-				note over OpenIdHelper : OpenID Connectの仕様でHS256のハッシュを取得する。
-			ac <-- OpenIdHelper : 認証コードのハッシュ
-			deactivate OpenIdHelper
-			
-			note over ac : 認証コードのハッシュとJWT.c_hashを比較、違う場合、RuntimeExceptionでAPPから抜き出す。
-			
-			note over ac : Token情報をTokenテーブルに新規保存する。
-		ac <-- ac : 業務URL、パラメータList
-		deactivate ac
-		
-		note over ac
-		自動Submitする画面を作成する。
-		GETでSubmitする。
-		URL : 業務URL
-		パラメータListを引数として渡す。
-		end note
-	mid <-- ac : 画面
-	deactivate ac
-	
+    引き継ぎデータについて、サンプル実装では下記の情報を格納する。
+    RETURN_URL        : 業務URL、アクセストークンが取れたあと、このURLに遷移すべき。
+    FOLLOW_PARAMETERS : 引き継ぎパラメータ、業務URLに遷移するとき、パタメータをGETで渡す。
+    CLIENT_ID         : ClientテーブルのID
+    USER_ID           : UserテーブルのID
+    end note
+    mid -> ac
+    activate ac
+        ac -> ac : performTakeToken()
+        activate ac
+            note over ac
+            HttpSessionからstateを取得して、引数のstateと比較。
+            一致しない場合、RuntimeExceptionをスルーする。
+            ※サンプル実装では、HttpSessionを利用するが、
+            　認可エンドポイントにリクエストに込んたstateと同じものを取ればOK。
+            end note
+            note over ac : 引き継ぎデータ.FOLLOW_PARAMETERSをMapからパラメータListに変換する。
+            note over ac : 引き継ぎデータ.CLIENT_IDでClientテーブルからClientエンティティを取得する。
+            note over ac : 引き継ぎデータ.User_IDでUserテーブルからUserエンティティを取得する。
+            note over ac
+            HttpSessionからnonceを取得する。
+            ※サンプル実装では、HttpSessionを利用するが、
+            　認可エンドポイントにリクエストに込んたnonceと同じものを取ればOK。
+            end note
+            
+            ac -> OpenIdHelper : takeAccessToken(引数)
+            activate OpenIdHelper
+                note over OpenIdHelper
+                引数は下記である。
+                tokenEndPointUrl : Client.authorizeUrl
+                authCode         : 認可コード
+                redirectUrl      : Client.requestUrl
+                clientId         : Client.ident
+                clientSecret     : Client.secret
+                end note
+                OpenIdHelper -> tep : HTTP通信でToken要求
+                activate tep
+                    note over OpenIdHelper
+                    送信先：tokenEndPointUrl
+                    OAuthの仕様の通り、下記のデータを送信する。
+                    grant_type     : authorization_code
+                    code           : authCode
+                    redirect_uri   : redirectUrl
+                    client_id      : clientId
+                    client_secret  : clientSecret
+                    end note
+                OpenIdHelper <-- tep : JSONのToken情報
+                deactivate tep
+            ac <-- OpenIdHelper : JSONのToken情報
+            deactivate OpenIdHelper
+
+            ac -> JsonHelper : json2Map(JSONのToken情報)
+            activate JsonHelper
+                note over JsonHelper : JSONをMapに変換する。
+            ac <-- JsonHelper : Token情報
+            deactivate JsonHelper
+            
+            ac -> OpenIdHelper : parseIdToken(署名鍵, JWT)
+            activate OpenIdHelper
+                note over ac
+                JWTをデコードし、署名を確認する。失敗の場合、RuntimeExceptionでAPPから抜き出す。
+                署名鍵   : Client.secret
+                JWT      : Token情報["id_token"]
+                end note
+            ac <-- OpenIdHelper : 
+            deactivate OpenIdHelper
+            
+            note over ac
+            JWTのnonceとHttpSessionのnonceを比較。違う場合、RuntimeExceptionでAPPから抜き出す。
+            end note
+            
+            ac -> OpenIdHelper : base64UrlHelfSha256(認可コード)
+            activate OpenIdHelper
+                note over OpenIdHelper : OpenID Connectの仕様でHS256のハッシュを取得する。
+            ac <-- OpenIdHelper : 認可コードのハッシュ
+            deactivate OpenIdHelper
+            
+            note over ac : 認可コードのハッシュとJWT.c_hashを比較、違う場合、RuntimeExceptionでAPPから抜き出す。
+            
+            note over ac : Token情報をTokenテーブルに新規保存する。
+        ac <-- ac : 業務URL、パラメータList
+        deactivate ac
+        
+        note over ac
+        自動Submitする画面を作成する。
+        GETでSubmitする。
+        URL : 業務URL
+        パラメータListを引数として渡す。
+        end note
+    mid <-- ac : 画面
+    deactivate ac
+    
 user <-- mid : 画面
 deactivate mid
 
 user -> mid : 業務URLアクセス
 activate mid
-	mid -> ol : 画面アクセウ
-	activate ol
-		note over ol
-			サンプル実装では注文一覧にアクセスになる。
-		end note
-	mid <-- ol : 
-	deactivate ol
+    mid -> ol : 画面アクセウ
+    activate ol
+        note over ol
+            サンプル実装では注文一覧にアクセスになる。
+        end note
+    mid <-- ol : 
+    deactivate ol
 user <-- mid : アクセス結果
 deactivate mid
 

@@ -1,17 +1,7 @@
 package jp.co.nri.openapi.sample.common;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -21,18 +11,10 @@ import javax.faces.bean.ManagedBean;
 import javax.faces.context.FacesContext;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.servlet.http.HttpSession;
 import javax.transaction.UserTransaction;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
-
-import com.fasterxml.jackson.databind.util.ByteBufferBackedOutputStream;
 
 import io.jsonwebtoken.Claims;
 import jp.co.nri.openapi.sample.persistence.Client;
@@ -65,28 +47,33 @@ public class AuthorizeCodeBean implements JsonHelper, OpenIdHelper, CommonFuncti
 	 * @throws Exception
 	 */
 	public void performTakeToken() throws Exception {
+		HttpSession session = (HttpSession)FacesContext.getCurrentInstance().getExternalContext().getSession(false);
+		//STATEをチェックする。
+		String origState = (String)session.getAttribute(ConstDef.SK_STATE_VALUE);
+		if (! origState.equals(stateEncoded)) {
+			throw new RuntimeException("state validation failed. ");
+		}
+		session.removeAttribute(ConstDef.SK_STATE_VALUE);
 		// ステータスをデーコードする
-		Map<String, Object> state = json2Map(
-				URLDecoder.decode(stateEncoded, StandardCharsets.UTF_8.name()).getBytes(StandardCharsets.UTF_8));
-		returnUrl = (String) state.get(ServiceInvoker.RETURN_URL);
+		Map<String, Object> forwardValue = (Map)session.getAttribute(ConstDef.SK_FORWARD_VALUE);
+		returnUrl = (String) forwardValue.get(ServiceInvoker.RETURN_URL);
 		followParams = new ArrayList<>();
-		((Map<String, Object>) state.get(ServiceInvoker.FOLLOW_PARAMETERS)).forEach((k, v) -> {
+		((Map<String, Object>) forwardValue.get(ServiceInvoker.FOLLOW_PARAMETERS)).forEach((k, v) -> {
 			String[] ent = { k, (String) v };
 			followParams.add(ent);
 		});
 
-		long userId = ((BigDecimal) state.get(ServiceInvoker.USER_ID)).longValue();
-		long clientId = ((BigDecimal) state.get(ServiceInvoker.CLIENT_ID)).longValue();
+		long userId = (long) forwardValue.get(ServiceInvoker.USER_ID);
+		long clientId = (long) forwardValue.get(ServiceInvoker.CLIENT_ID);
 
-		String nonce = (String) FacesContext.getCurrentInstance().getExternalContext().getSessionMap()
-				.get(ConstDef.SK_NONCE_VALUE);
+		String nonce = (String) session.getAttribute(ConstDef.SK_NONCE_VALUE);
 		try {
 			ut.begin();
 			// トークンと関連するデータを取得しておく
 			User user = em.find(User.class, userId);
 			Client client = em.find(Client.class, clientId);
 
-			HttpResponse response = takeAccessToken(client.getAuthorizeUrl(), authCode, client.getRequestUrl(),
+			HttpResponse response = takeAccessToken(client.getTokenUrl(), authCode, client.getRequestUrl(),
 					client.getIdent(), client.getSecret());
 
 			// トークン関連情報をDBに保存。

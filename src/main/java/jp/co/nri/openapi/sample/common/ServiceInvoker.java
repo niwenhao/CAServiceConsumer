@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -86,7 +87,7 @@ public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 		private String clientId;
 		private String requestUri;
 		private String scope;
-		private Map<String, Object> state = new HashMap<>();
+		private String state;
 		private String nonce;
 
 		private String authorizeUrl;
@@ -105,8 +106,7 @@ public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 				sb.append("&scope=").append(URLEncoder.encode(scope, StandardCharsets.UTF_8.name()));
 				sb.append("&nonce=").append(URLEncoder.encode(nonce, StandardCharsets.UTF_8.name()));
 
-				sb.append("&state=").append(URLEncoder.encode(new String(map2Json(state), StandardCharsets.UTF_8),
-						StandardCharsets.UTF_8.name()));
+				sb.append("&state=").append(URLEncoder.encode(state, StandardCharsets.UTF_8.name()));
 				return sb.toString();
 			} catch (UnsupportedEncodingException e) {
 				throw new RuntimeException(e);
@@ -145,10 +145,14 @@ public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 			this.scope = scope;
 		}
 
-		public Map<String, Object> getState() {
+		public String getState() {
 			return state;
 		}
-
+		
+		public void setState(String state) {
+			this.state = state;
+		}
+		
 		public String getNonce() {
 			return nonce;
 		}
@@ -220,14 +224,16 @@ public abstract class ServiceInvoker implements JsonHelper, OpenIdHelper {
 		this.getSession().setAttribute(ConstDef.SK_NONCE_VALUE, re.nonce);
 		re.requestUri = this.client.getRequestUrl();
 		re.scope = this.client.getScope();
-		Map<String, Object> state = new HashMap<>();
+		Map<String, Object> forwardValue = new HashMap<>();
 
-		state.put(RETURN_URL, this.getReturnURL());
-		state.put(FOLLOW_PARAMETERS, this.getAppParameters());
-		state.put(CLIENT_ID, this.client.getId());
-		state.put(USER_ID, user.getId());
-		re.state = state;
+		forwardValue.put(RETURN_URL, this.getReturnURL());
+		forwardValue.put(FOLLOW_PARAMETERS, this.getAppParameters());
+		forwardValue.put(CLIENT_ID, this.client.getId());
+		forwardValue.put(USER_ID, user.getId());
+		this.getSession().setAttribute(ConstDef.SK_FORWARD_VALUE, forwardValue);
 
+		re.state = randomGen();
+		this.getSession().setAttribute(ConstDef.SK_STATE_VALUE, re.getState());
 		throw re;
 	}
 

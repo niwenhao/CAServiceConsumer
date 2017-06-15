@@ -39,10 +39,10 @@ public interface OpenIdHelper extends JsonHelper {
 		byte[] shaBuf = DigestUtils.sha256(codeBuf);
 		byte[] helfShaBuf = new byte[shaBuf.length / 2];
 		System.arraycopy(shaBuf, 0, helfShaBuf, 0, helfShaBuf.length);
-		String rst = Base64.getEncoder().encodeToString(helfShaBuf);
-		return rst.replaceAll("\\+", "-").replaceAll("/", "_").replaceAll("=*$", "");
+		String rst = Base64.getUrlEncoder().encodeToString(helfShaBuf);
+		return rst.replaceAll("=*$", "");
 	}
-
+	
 	default Map<String, Object> takeRefreshToken(Client client, Token token) throws Exception {
 		HttpClient httpClient = HttpClients.createDefault();
 
